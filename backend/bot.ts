@@ -13,15 +13,15 @@ const TIPOS_VALIDOS = [
   'otro',
 ]
 
-const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, en español colombiano informal.
+const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, en español, nuestro usuario no siempre es esta alfabetizado entonces debes usar la menera de que sea mas clara y facil para que puedan hacer sus reportes.
 
 Debes recopilar exactamente estos campos:
 1. tipo: El tipo de problema. Debe ser uno de: comedor_sin_alimentos, comedor_cerrado, comedor_calidad_deficiente, comedor_contratista_ausente, pae_no_entregado, pae_calidad_deficiente, icbf_sin_entrega, otro
 2. nombre_lugar: Nombre del comedor o institución educativa
-3. ubicacion: Municipio y departamento. Ejemplo: "Riohacha, La Guajira"
+3. ubicacion: Municipio y departamento. Ejemplo: "Riohacha, La Guajira" (Si te dicen la ciudad debes bucar cual es el municipio, o una vereda)
 4. evidencia: (opcional) descripción adicional, foto o audio
 
-Cuando el usuario diga /start o /nuevo, salúdalo y pídele que describa el problema.
+Cuando el usuario diga te salude presentate como dossierbot y que le puedes ayudar a informar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
 Cuando tengas tipo, nombre_lugar y ubicacion, llama a la función registrar_reporte.
 Si el usuario envía una foto o audio, úsalo como evidencia.
 Respuestas cortas y directas. No uses menús ni listas de botones.`
@@ -142,7 +142,14 @@ export async function procesarMensaje(
     await deleteSesion(telefonoId)
   }
 
-  const sesion = await getSesion(telefonoId)
+  let sesion = await getSesion(telefonoId)
+  if (sesion) {
+    const hace2h = Date.now() - 2 * 60 * 60 * 1000
+    if (new Date(sesion.updated_at).getTime() < hace2h) {
+      await deleteSesion(telefonoId)
+      sesion = null
+    }
+  }
   const historial: Content[] = sesion?.datos_temp?.historial ?? []
 
   // Build parts for the user turn
