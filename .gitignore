@@ -1,24 +1,19 @@
 # Dependencies
 node_modules/
-.pnp
-.pnp.js
 
 # Next.js
-frontend/.next/
-frontend/out/
+.next/
+out/
 
-# Env files (nunca subir secrets)
+# Env files
 .env
 .env.local
 .env.*.local
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
 
 # Supabase
 supabase/.temp/
 
-# Claude Code local settings
+# Claude Code
 .claude/
 
 # OS
