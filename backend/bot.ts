@@ -13,18 +13,18 @@ const TIPOS_VALIDOS = [
   'otro',
 ]
 
-const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, en español, nuestro usuario no siempre es esta alfabetizado entonces debes usar la menera de que sea mas clara y facil para que puedan hacer sus reportes.
+const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, usa un lenguaje neutro en español, nuestro usuario no siempre es esta alfabetizado entonces debes usar la menera de que sea mas clara y facil para que puedan hacer sus reportes.
 
 Debes recopilar exactamente estos campos:
 1. tipo: El tipo de problema. Debe ser uno de: comedor_sin_alimentos, comedor_cerrado, comedor_calidad_deficiente, comedor_contratista_ausente, pae_no_entregado, pae_calidad_deficiente, icbf_sin_entrega, otro
 2. nombre_lugar: Nombre del comedor o institución educativa
-3. ubicacion: Municipio y departamento. Ejemplo: "Riohacha, La Guajira" (Si te dicen la ciudad debes buscar cual es el municipio, o una vereda)
+3. ubicacion: Cualquier referencia de lugar que dé el usuario — ciudad, barrio, vereda, nombre de un lugar cercano. NO exijas un formato específico ni le pidas que escriba municipio y departamento. Acepta lo que diga tal como lo dice.
 4. evidencia: (opcional) descripción adicional, foto o audio
 
-Cuando el usuario diga te salude presentate como dossierbot y que le puedes ayudar a informar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
-Cuando tengas tipo, nombre_lugar y ubicacion, llama a la función registrar_reporte.
+Cuando el usuario te salude, preséntate como DossierBot y explica que puedes ayudarle a reportar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
+Cuando tengas tipo, nombre_lugar y ubicacion, llama a la función registrar_reporte inmediatamente.
 Si el usuario envía una foto o audio, úsalo como evidencia.
-Respuestas cortas y directas. No uses menús ni listas de botones.`
+Respuestas cortas y directas. No uses menús ni listas de botones. Nunca le pidas al usuario que formatee la ubicación de una manera específica.`
 
 function getClient() {
   return new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
@@ -55,16 +55,36 @@ async function deleteSesion(telefonoId: string) {
   await getSupabaseAdmin().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
-async function geocodificar(municipioTexto: string, deptoTexto: string | null) {
-  let query = getSupabaseAdmin()
-    .from('municipios')
-    .select('lat, lng, municipio, departamento')
-    .ilike('municipio', `%${municipioTexto.trim()}%`)
+async function geocodificar(textoLibre: string): Promise<{ lat: number; lng: number; municipio: string; departamento: string } | null> {
+  const supabase = getSupabaseAdmin()
+  // Intenta con cada palabra o fragmento del texto (palabras de 4+ letras)
+  const terminos = textoLibre
+    .split(/[\s,]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 4)
 
-  if (deptoTexto) query = query.ilike('departamento', `%${deptoTexto.trim()}%`)
+  for (const termino of terminos) {
+    const { data } = await supabase
+      .from('municipios')
+      .select('lat, lng, municipio, departamento')
+      .ilike('municipio', `%${termino}%`)
+      .limit(1)
+      .single()
+    if (data) return data
+  }
 
-  const { data } = await query.limit(1).single()
-  return data ?? null
+  // Último intento: busca el texto completo contra departamento
+  for (const termino of terminos) {
+    const { data } = await supabase
+      .from('municipios')
+      .select('lat, lng, municipio, departamento')
+      .ilike('departamento', `%${termino}%`)
+      .limit(1)
+      .single()
+    if (data) return data
+  }
+
+  return null
 }
 
 async function crearReporte(
@@ -73,8 +93,8 @@ async function crearReporte(
   nombreReportante?: string,
   telegramUsername?: string
 ) {
-  const [municipioRaw, deptoRaw] = (campos.ubicacion ?? '').split(',').map((s) => s.trim())
-  const geo = await geocodificar(municipioRaw, deptoRaw ?? null)
+  const textoUbicacion = campos.ubicacion ?? ''
+  const geo = await geocodificar(textoUbicacion)
 
   const { error } = await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
@@ -82,8 +102,8 @@ async function crearReporte(
     telegram_username: telegramUsername ?? null,
     tipo: campos.tipo,
     nombre_lugar: campos.nombre_lugar,
-    municipio: geo?.municipio ?? municipioRaw,
-    departamento: geo?.departamento ?? deptoRaw ?? null,
+    municipio: geo?.municipio ?? textoUbicacion,
+    departamento: geo?.departamento ?? null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
     canal: 'telegram',
@@ -194,7 +214,7 @@ export async function procesarMensaje(
                 },
                 ubicacion: {
                   type: SchemaType.STRING,
-                  description: 'Municipio y departamento. Ejemplo: "Riohacha, La Guajira"',
+                  description: 'Lugar tal como lo describió el usuario: ciudad, barrio, vereda o cualquier referencia geográfica.',
                 },
                 evidencia: {
                   type: SchemaType.STRING,
