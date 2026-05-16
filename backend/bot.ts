@@ -60,7 +60,7 @@ async function crearReporte(telefonoId: string, datos: Record<string, string>) {
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
     canal: 'whatsapp',
-    estado: 'pendiente',
+    estado: 'aprobado',
   })
 }
 
