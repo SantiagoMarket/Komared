@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { procesarMensaje, procesarCallback } from '@/lib/bot'
+import { procesarMensaje, procesarCallback } from '@/backend/bot'
 
 export async function POST(req: NextRequest) {
   try {

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { sendMessage, teclado, tecladoInline } from './telegram'
+import { sendMessage, teclado, tecladoInline } from '@/backend/telegram'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
