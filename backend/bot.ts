@@ -34,14 +34,31 @@ async function deleteSesion(telefonoId: string) {
   await getSupabaseAdmin().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
+async function geocodificar(municipioTexto: string, deptoTexto: string | null) {
+  const supabase = getSupabaseAdmin()
+  let query = supabase
+    .from('municipios')
+    .select('lat, lng, municipio, departamento')
+    .ilike('municipio', `%${municipioTexto.trim()}%`)
+
+  if (deptoTexto) query = query.ilike('departamento', `%${deptoTexto.trim()}%`)
+
+  const { data } = await query.limit(1).single()
+  return data ?? null
+}
+
 async function crearReporte(telefonoId: string, datos: Record<string, string>) {
-  const [municipio, departamento] = (datos.ubicacion ?? '').split(',').map((s) => s.trim())
+  const [municipioRaw, deptoRaw] = (datos.ubicacion ?? '').split(',').map((s) => s.trim())
+  const geo = await geocodificar(municipioRaw, deptoRaw ?? null)
+
   await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
     tipo: datos.tipo,
     nombre_lugar: datos.nombre_lugar,
-    municipio: municipio ?? datos.ubicacion,
-    departamento: departamento ?? null,
+    municipio: geo?.municipio ?? municipioRaw,
+    departamento: geo?.departamento ?? deptoRaw ?? null,
+    lat: geo?.lat ?? null,
+    lng: geo?.lng ?? null,
     canal: 'whatsapp',
     estado: 'pendiente',
   })
