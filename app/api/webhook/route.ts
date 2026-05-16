@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('Webhook error:', err)
-    return NextResponse.json({ ok: false }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Webhook error:', msg)
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
 }
