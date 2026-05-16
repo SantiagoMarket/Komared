@@ -1,18 +1,39 @@
+import Anthropic from '@anthropic-ai/sdk'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
-import { sendMessage, teclado, tecladoInline } from '@/backend/telegram'
+import { sendMessage } from '@/backend/telegram'
 
-const TIPOS: Record<string, string> = {
-  '🍽️ Comedor sin alimentos': 'comedor_sin_alimentos',
-  '🔒 Comedor cerrado': 'comedor_cerrado',
-  '⚠️ Calidad deficiente': 'comedor_calidad_deficiente',
-  '🚫 Contratista ausente': 'comedor_contratista_ausente',
-  '📦 PAE no entregado': 'pae_no_entregado',
-  '🥴 PAE calidad deficiente': 'pae_calidad_deficiente',
-  '🏛️ ICBF sin entrega': 'icbf_sin_entrega',
+const TIPOS_VALIDOS = [
+  'comedor_sin_alimentos',
+  'comedor_cerrado',
+  'comedor_calidad_deficiente',
+  'comedor_contratista_ausente',
+  'pae_no_entregado',
+  'pae_calidad_deficiente',
+  'icbf_sin_entrega',
+  'otro',
+]
+
+const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el programa de monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, en español colombiano informal.
+
+Debes recopilar exactamente 4 campos:
+1. **tipo**: El tipo de problema (OBLIGATORIO). Debe ser uno de: comedor_sin_alimentos, comedor_cerrado, comedor_calidad_deficiente, comedor_contratista_ausente, pae_no_entregado, pae_calidad_deficiente, icbf_sin_entrega, otro
+2. **nombre_lugar**: Nombre del comedor o institución educativa (OBLIGATORIO)
+3. **ubicacion**: Municipio y departamento donde está el lugar (OBLIGATORIO). Formato: "Municipio, Departamento"
+4. **evidencia**: Foto, video o descripción adicional (OPCIONAL - el usuario puede omitirla)
+
+Guías de comportamiento:
+- Sé empático y directo. No uses menús ni botones.
+- Conversa naturalmente para extraer la información.
+- Si el usuario envía una foto o audio, agrádeceselo y úsalo como evidencia.
+- Cuando tengas los 3 campos obligatorios, llama a la herramienta "registrar_reporte".
+- Si el usuario dice /start o /nuevo, salúdalo y pídele que describa el problema.
+- Si el usuario dice /cancelar, indica que el reporte fue cancelado.
+- No inventes información. Si algo no está claro, pregunta amablemente.
+- Mantén las respuestas cortas y al punto.`
+
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 }
-
-const PASOS = ['tipo', 'nombre_lugar', 'ubicacion', 'evidencia'] as const
-type Paso = (typeof PASOS)[number]
 
 async function getSesion(telefonoId: string) {
   const { data } = await getSupabaseAdmin()
@@ -23,9 +44,14 @@ async function getSesion(telefonoId: string) {
   return data
 }
 
-async function setSesion(telefonoId: string, datos: object, paso: Paso) {
+async function setSesion(telefonoId: string, historial: object[]) {
   await getSupabaseAdmin().from('sesiones_bot').upsert(
-    { telefono: telefonoId, datos_temp: datos, paso_actual: paso, updated_at: new Date().toISOString() },
+    {
+      telefono: telefonoId,
+      datos_temp: { historial },
+      paso_actual: 'conversando',
+      updated_at: new Date().toISOString(),
+    },
     { onConflict: 'telefono' }
   )
 }
@@ -35,8 +61,7 @@ async function deleteSesion(telefonoId: string) {
 }
 
 async function geocodificar(municipioTexto: string, deptoTexto: string | null) {
-  const supabase = getSupabaseAdmin()
-  let query = supabase
+  let query = getSupabaseAdmin()
     .from('municipios')
     .select('lat, lng, municipio, departamento')
     .ilike('municipio', `%${municipioTexto.trim()}%`)
@@ -47,21 +72,26 @@ async function geocodificar(municipioTexto: string, deptoTexto: string | null) {
   return data ?? null
 }
 
-async function crearReporte(telefonoId: string, datos: Record<string, string>) {
-  const [municipioRaw, deptoRaw] = (datos.ubicacion ?? '').split(',').map((s) => s.trim())
+async function crearReporte(
+  telefonoId: string,
+  campos: Record<string, string>,
+  nombreReportante?: string,
+  telegramUsername?: string
+) {
+  const [municipioRaw, deptoRaw] = (campos.ubicacion ?? '').split(',').map((s) => s.trim())
   const geo = await geocodificar(municipioRaw, deptoRaw ?? null)
 
   await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
-    nombre_reportante: datos.nombre_reportante ?? null,
-    telegram_username: datos.telegram_username ?? null,
-    tipo: datos.tipo,
-    nombre_lugar: datos.nombre_lugar,
+    nombre_reportante: nombreReportante ?? null,
+    telegram_username: telegramUsername ?? null,
+    tipo: campos.tipo,
+    nombre_lugar: campos.nombre_lugar,
     municipio: geo?.municipio ?? municipioRaw,
     departamento: geo?.departamento ?? deptoRaw ?? null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
-    canal: 'whatsapp',
+    canal: 'telegram',
     estado: 'aprobado',
   })
 }
@@ -72,101 +102,132 @@ export async function procesarMensaje(
   texto: string,
   fileId?: string,
   nombreReportante?: string,
-  telegramUsername?: string
+  telegramUsername?: string,
+  isVoice?: boolean
 ) {
-  const sesion = await getSesion(telefonoId)
-  const paso: Paso = sesion?.paso_actual ?? 'tipo'
-  const datos: Record<string, string> = sesion?.datos_temp ?? {}
-
-  if (nombreReportante) datos.nombre_reportante = nombreReportante
-  if (telegramUsername) datos.telegram_username = telegramUsername
-
-  // Comando de inicio
-  if (texto === '/start' || texto === '/nuevo') {
-    await sendMessage(
-      chatId,
-      '👋 <b>Bienvenido al monitor PAE / Comedores</b>\n\nVamos a registrar tu reporte en 4 pasos.\n\n¿Qué problema quieres reportar?',
-      teclado([
-        ['🍽️ Comedor sin alimentos', '🔒 Comedor cerrado'],
-        ['⚠️ Calidad deficiente', '🚫 Contratista ausente'],
-        ['📦 PAE no entregado', '🥴 PAE calidad deficiente'],
-        ['🏛️ ICBF sin entrega'],
-      ])
-    )
-    await setSesion(telefonoId, {}, 'tipo')
-    return
-  }
-
   if (texto === '/cancelar') {
     await deleteSesion(telefonoId)
     await sendMessage(chatId, '❌ Reporte cancelado. Escribe /nuevo para empezar de nuevo.')
     return
   }
 
-  // Paso 1: tipo de problema
-  if (paso === 'tipo') {
-    const tipoEnum = TIPOS[texto]
-    if (!tipoEnum) {
-      await sendMessage(chatId, '⚠️ Selecciona una opción del menú.')
+  const sesion = await getSesion(telefonoId)
+  const historial: Anthropic.MessageParam[] = sesion?.datos_temp?.historial ?? []
+
+  // Build user message content
+  const contenido: Anthropic.ContentBlockParam[] = []
+
+  if (fileId && !isVoice) {
+    // Telegram photo: fetch and send as base64 to Claude vision
+    try {
+      const fileRes = await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
+      )
+      const fileData = await fileRes.json()
+      const filePath = fileData.result?.file_path
+
+      if (filePath) {
+        const imgRes = await fetch(
+          `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${filePath}`
+        )
+        const buffer = await imgRes.arrayBuffer()
+        const base64 = Buffer.from(buffer).toString('base64')
+        const mimeType = filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') ? 'image/jpeg' : 'image/png'
+
+        contenido.push({
+          type: 'image',
+          source: { type: 'base64', media_type: mimeType, data: base64 },
+        })
+      }
+    } catch {
+      // If image fetch fails, just note it as evidence
+    }
+  }
+
+  if (isVoice && fileId) {
+    contenido.push({ type: 'text', text: `[El usuario envió un mensaje de voz. file_id: ${fileId}]` })
+  }
+
+  const textoFinal = texto.trim()
+  if (textoFinal) {
+    contenido.push({ type: 'text', text: textoFinal })
+  }
+
+  if (contenido.length === 0) return
+
+  historial.push({ role: 'user', content: contenido })
+
+  // Call Claude
+  const client = getClient()
+  const response = await client.messages.create({
+    model: 'claude-opus-4-7',
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT,
+    tools: [
+      {
+        name: 'registrar_reporte',
+        description: 'Registra el reporte en la base de datos cuando se han recopilado los campos obligatorios.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            tipo: {
+              type: 'string',
+              enum: TIPOS_VALIDOS,
+              description: 'Tipo de problema reportado',
+            },
+            nombre_lugar: {
+              type: 'string',
+              description: 'Nombre del comedor o institución educativa',
+            },
+            ubicacion: {
+              type: 'string',
+              description: 'Municipio y departamento. Ejemplo: "Riohacha, La Guajira"',
+            },
+            evidencia: {
+              type: 'string',
+              description: 'Descripción adicional o file_id de la foto/audio enviada (opcional)',
+            },
+          },
+          required: ['tipo', 'nombre_lugar', 'ubicacion'],
+        },
+      },
+    ],
+    messages: historial,
+  })
+
+  // Handle tool use
+  if (response.stop_reason === 'tool_use') {
+    const toolUse = response.content.find((b) => b.type === 'tool_use')
+    if (toolUse && toolUse.type === 'tool_use' && toolUse.name === 'registrar_reporte') {
+      const campos = toolUse.input as Record<string, string>
+      await crearReporte(telefonoId, campos, nombreReportante, telegramUsername)
+      await deleteSesion(telefonoId)
+      await sendMessage(
+        chatId,
+        '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
+      )
       return
     }
-    datos.tipo = tipoEnum
-    await setSesion(telefonoId, datos, 'nombre_lugar')
-    await sendMessage(
-      chatId,
-      '📍 <b>Paso 2 de 4</b>\n\n¿Cuál es el nombre del comedor o institución educativa?',
-      { reply_markup: { remove_keyboard: true } }
-    )
-    return
   }
 
-  // Paso 2: nombre del lugar
-  if (paso === 'nombre_lugar') {
-    datos.nombre_lugar = texto
-    await setSesion(telefonoId, datos, 'ubicacion')
-    await sendMessage(
-      chatId,
-      '🗺️ <b>Paso 3 de 4</b>\n\n¿En qué municipio y departamento está?\n\nEjemplo: <i>Riohacha, La Guajira</i>'
-    )
-    return
-  }
+  // Extract text response
+  const textoRespuesta = response.content
+    .filter((b) => b.type === 'text')
+    .map((b) => (b as Anthropic.TextBlock).text)
+    .join('\n')
 
-  // Paso 3: ubicación
-  if (paso === 'ubicacion') {
-    datos.ubicacion = texto
-    await setSesion(telefonoId, datos, 'evidencia')
-    await sendMessage(
-      chatId,
-      '📸 <b>Paso 4 de 4</b>\n\nSi tienes una foto o video como evidencia, envíala ahora.\n\nSi no tienes, escribe <b>omitir</b>.',
-      tecladoInline([[{ texto: 'Omitir evidencia', data: 'omitir_evidencia' }]])
-    )
-    return
-  }
+  // Save updated history (append assistant response)
+  historial.push({ role: 'assistant', content: response.content })
+  await setSesion(telefonoId, historial)
 
-  // Paso 4: evidencia (foto o "omitir")
-  if (paso === 'evidencia') {
-    if (fileId) datos.foto_url = fileId
-    await crearReporte(telefonoId, datos)
-    await deleteSesion(telefonoId)
-    await sendMessage(
-      chatId,
-      '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte será revisado por un validador y aparecerá en el mapa público una vez aprobado.\n\nEscribe /nuevo para enviar otro reporte.',
-      { reply_markup: { remove_keyboard: true } }
-    )
-    return
+  if (textoRespuesta) {
+    await sendMessage(chatId, textoRespuesta)
   }
 }
 
 export async function procesarCallback(chatId: number, telefonoId: string, data: string) {
+  // Legacy callback handler - no longer used but kept for compatibility
   if (data === 'omitir_evidencia') {
-    const sesion = await getSesion(telefonoId)
-    const datos: Record<string, string> = sesion?.datos_temp ?? {}
-    await crearReporte(telefonoId, datos)
-    await deleteSesion(telefonoId)
-    await sendMessage(
-      chatId,
-      '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte será revisado por un validador.\n\nEscribe /nuevo para enviar otro reporte.',
-      { reply_markup: { remove_keyboard: true } }
-    )
+    await procesarMensaje(chatId, telefonoId, 'omitir evidencia')
   }
 }
