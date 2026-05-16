@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/backend/supabase-admin'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const estado = searchParams.get('estado')
   const municipio = searchParams.get('municipio')
 
-  let query = supabase.from('reportes').select('*').order('created_at', { ascending: false })
+  let query = getSupabaseAdmin().from('reportes').select('*').order('created_at', { ascending: false })
   if (estado) query = query.eq('estado', estado)
   if (municipio) query = query.eq('municipio', municipio)
 
@@ -22,7 +17,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { data, error } = await supabase.from('reportes').insert(body).select().single()
+  const { data, error } = await getSupabaseAdmin().from('reportes').insert(body).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }

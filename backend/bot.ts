@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/backend/supabase-admin'
 import { sendMessage, teclado, tecladoInline } from '@/backend/telegram'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 const TIPOS: Record<string, string> = {
   '🍽️ Comedor sin alimentos': 'comedor_sin_alimentos',
@@ -20,7 +15,7 @@ const PASOS = ['tipo', 'nombre_lugar', 'ubicacion', 'evidencia'] as const
 type Paso = (typeof PASOS)[number]
 
 async function getSesion(telefonoId: string) {
-  const { data } = await supabase
+  const { data } = await getSupabaseAdmin()
     .from('sesiones_bot')
     .select('*')
     .eq('telefono', telefonoId)
@@ -29,19 +24,19 @@ async function getSesion(telefonoId: string) {
 }
 
 async function setSesion(telefonoId: string, datos: object, paso: Paso) {
-  await supabase.from('sesiones_bot').upsert(
+  await getSupabaseAdmin().from('sesiones_bot').upsert(
     { telefono: telefonoId, datos_temp: datos, paso_actual: paso, updated_at: new Date().toISOString() },
     { onConflict: 'telefono' }
   )
 }
 
 async function deleteSesion(telefonoId: string) {
-  await supabase.from('sesiones_bot').delete().eq('telefono', telefonoId)
+  await getSupabaseAdmin().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
 async function crearReporte(telefonoId: string, datos: Record<string, string>) {
   const [municipio, departamento] = (datos.ubicacion ?? '').split(',').map((s) => s.trim())
-  await supabase.from('reportes').insert({
+  await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
     tipo: datos.tipo,
     nombre_lugar: datos.nombre_lugar,
