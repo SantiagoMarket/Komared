@@ -91,7 +91,7 @@ async function crearReporte(
   })
 }
 
-async function fetchImageAsBase64(fileId: string): Promise<{ data: string; mimeType: string } | null> {
+async function fetchTelegramFile(fileId: string, forceAudio = false): Promise<{ data: string; mimeType: string } | null> {
   try {
     const fileRes = await fetch(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
@@ -100,12 +100,21 @@ async function fetchImageAsBase64(fileId: string): Promise<{ data: string; mimeT
     const filePath: string = fileData.result?.file_path
     if (!filePath) return null
 
-    const imgRes = await fetch(
+    const res = await fetch(
       `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${filePath}`
     )
-    const buffer = await imgRes.arrayBuffer()
+    const buffer = await res.arrayBuffer()
     const data = Buffer.from(buffer).toString('base64')
-    const mimeType = filePath.endsWith('.png') ? 'image/png' : 'image/jpeg'
+
+    let mimeType: string
+    if (forceAudio) {
+      mimeType = 'audio/ogg'
+    } else if (filePath.endsWith('.png')) {
+      mimeType = 'image/png'
+    } else {
+      mimeType = 'image/jpeg'
+    }
+
     return { data, mimeType }
   } catch {
     return null
@@ -133,15 +142,11 @@ export async function procesarMensaje(
   // Build parts for the user turn
   const parts: Part[] = []
 
-  if (fileId && !isVoice) {
-    const img = await fetchImageAsBase64(fileId)
-    if (img) {
-      parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } })
+  if (fileId) {
+    const file = await fetchTelegramFile(fileId, isVoice)
+    if (file) {
+      parts.push({ inlineData: { data: file.data, mimeType: file.mimeType } })
     }
-  }
-
-  if (isVoice && fileId) {
-    parts.push({ text: `[El usuario envió un mensaje de voz como evidencia. file_id: ${fileId}]` })
   }
 
   const textoFinal = texto.trim()
