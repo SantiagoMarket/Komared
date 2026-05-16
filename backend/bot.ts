@@ -101,7 +101,7 @@ async function crearReporte(
     departamento: geo?.departamento ?? null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
-    canal: 'telegram',
+    canal: 'telegram' as const,
     estado: 'aprobado',
   })
 
