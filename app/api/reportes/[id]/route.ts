@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { data, error } = await getSupabaseAdmin().from('reportes').select('*').eq('id', id).single()
