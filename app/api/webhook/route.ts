@@ -7,20 +7,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // Mensaje de texto o foto
     if (body.message) {
       const msg = body.message
       const chatId: number = msg.chat.id
       const telefonoId: string = String(msg.from.id)
       const texto: string = msg.text ?? msg.caption ?? ''
+      const nombreReportante: string = [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' ')
+      const telegramUsername: string | undefined = msg.from.username
       const fileId: string | undefined = msg.photo
         ? msg.photo[msg.photo.length - 1].file_id
         : msg.video?.file_id
 
-      await procesarMensaje(chatId, telefonoId, texto, fileId)
+      await procesarMensaje(chatId, telefonoId, texto, fileId, nombreReportante, telegramUsername)
     }
 
-    // Callback de botón inline
     if (body.callback_query) {
       const cb = body.callback_query
       const chatId: number = cb.message.chat.id

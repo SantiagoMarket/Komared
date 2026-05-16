@@ -53,6 +53,8 @@ async function crearReporte(telefonoId: string, datos: Record<string, string>) {
 
   await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
+    nombre_reportante: datos.nombre_reportante ?? null,
+    telegram_username: datos.telegram_username ?? null,
     tipo: datos.tipo,
     nombre_lugar: datos.nombre_lugar,
     municipio: geo?.municipio ?? municipioRaw,
@@ -68,11 +70,16 @@ export async function procesarMensaje(
   chatId: number,
   telefonoId: string,
   texto: string,
-  fileId?: string
+  fileId?: string,
+  nombreReportante?: string,
+  telegramUsername?: string
 ) {
   const sesion = await getSesion(telefonoId)
   const paso: Paso = sesion?.paso_actual ?? 'tipo'
   const datos: Record<string, string> = sesion?.datos_temp ?? {}
+
+  if (nombreReportante) datos.nombre_reportante = nombreReportante
+  if (telegramUsername) datos.telegram_username = telegramUsername
 
   // Comando de inicio
   if (texto === '/start' || texto === '/nuevo') {
