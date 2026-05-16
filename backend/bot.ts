@@ -76,7 +76,7 @@ async function crearReporte(
   const [municipioRaw, deptoRaw] = (campos.ubicacion ?? '').split(',').map((s) => s.trim())
   const geo = await geocodificar(municipioRaw, deptoRaw ?? null)
 
-  await getSupabaseAdmin().from('reportes').insert({
+  const { error } = await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
     telegram_username: telegramUsername ?? null,
@@ -89,6 +89,8 @@ async function crearReporte(
     canal: 'telegram',
     estado: 'aprobado',
   })
+
+  if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
 }
 
 async function fetchTelegramFile(fileId: string, forceAudio = false): Promise<{ data: string; mimeType: string } | null> {
@@ -134,6 +136,10 @@ export async function procesarMensaje(
     await deleteSesion(telefonoId)
     await sendMessage(chatId, '❌ Reporte cancelado. Escribe /nuevo para empezar de nuevo.')
     return
+  }
+
+  if (texto === '/start' || texto === '/nuevo') {
+    await deleteSesion(telefonoId)
   }
 
   const sesion = await getSesion(telefonoId)
@@ -206,12 +212,21 @@ export async function procesarMensaje(
 
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
-    await crearReporte(telefonoId, campos, nombreReportante, telegramUsername)
-    await deleteSesion(telefonoId)
-    await sendMessage(
-      chatId,
-      '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
-    )
+    try {
+      await crearReporte(telefonoId, campos, nombreReportante, telegramUsername)
+      await deleteSesion(telefonoId)
+      await sendMessage(
+        chatId,
+        '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
+      )
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('Error guardando reporte:', msg)
+      await sendMessage(
+        chatId,
+        '⚠️ Hubo un error al guardar tu reporte. Por favor intenta de nuevo con /nuevo.'
+      )
+    }
     return
   }
 
