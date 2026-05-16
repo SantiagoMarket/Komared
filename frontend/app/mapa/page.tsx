@@ -1,3 +1,5 @@
+'use client'
+
 import dynamic from 'next/dynamic'
 
 const MapaCalor = dynamic(() => import('@/components/MapaCalor'), { ssr: false })
