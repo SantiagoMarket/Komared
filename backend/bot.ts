@@ -13,18 +13,42 @@ const TIPOS_VALIDOS = [
   'otro',
 ]
 
-const SYSTEM_PROMPT = `Eres un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, usa un lenguaje neutro en español, nuestro usuario no siempre es esta alfabetizado entonces debes usar la menera de que sea mas clara y facil para que puedan hacer sus reportes.
+type Municipio = { municipio: string; departamento: string; lat: number; lng: number }
+
+// Cache en memoria — se carga una vez por instancia serverless
+let municipiosCache: Municipio[] | null = null
+
+async function getMunicipios(): Promise<Municipio[]> {
+  if (municipiosCache) return municipiosCache
+  const { data } = await getSupabaseAdmin()
+    .from('municipios')
+    .select('municipio, departamento, lat, lng')
+    .order('departamento')
+    .order('municipio')
+  municipiosCache = (data as Municipio[]) ?? []
+  return municipiosCache
+}
+
+function buildSystemPrompt(municipios: Municipio[]): string {
+  const listaMunicipios = municipios
+    .map((m) => `${m.municipio} (${m.departamento})`)
+    .join(', ')
+
+  return `Eres DossierBot, un asistente de veeduría ciudadana para el monitoreo de comedores comunitarios y el Programa de Alimentación Escolar (PAE) en Colombia. Tu función es recopilar información sobre irregularidades de forma amigable y conversacional, en español sencillo. Nuestros usuarios no siempre están alfabetizados, usa un lenguaje muy claro y fácil.
 
 Debes recopilar exactamente estos campos:
 1. tipo: El tipo de problema. Debe ser uno de: comedor_sin_alimentos, comedor_cerrado, comedor_calidad_deficiente, comedor_contratista_ausente, pae_no_entregado, pae_calidad_deficiente, icbf_sin_entrega, otro
 2. nombre_lugar: Nombre del comedor o institución educativa
-3. ubicacion: Cualquier referencia de lugar que dé el usuario — ciudad, barrio, vereda, nombre de un lugar cercano. NO exijas un formato específico ni le pidas que escriba municipio y departamento. Acepta lo que diga tal como lo dice.
+3. municipio_id: El municipio exacto de la siguiente lista que mejor corresponda a lo que diga el usuario. El usuario puede decir una ciudad, un barrio, una vereda, un lugar cercano o cualquier referencia. TÚ debes identificar cuál municipio de la lista corresponde. NUNCA le pidas al usuario que escriba el municipio — es tu trabajo identificarlo.
 4. evidencia: (opcional) descripción adicional, foto o audio
 
+Lista de municipios válidos: ${listaMunicipios}
+
 Cuando el usuario te salude, preséntate como DossierBot y explica que puedes ayudarle a reportar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
-Cuando tengas tipo, nombre_lugar y ubicacion, llama a la función registrar_reporte inmediatamente.
+Cuando tengas tipo, nombre_lugar y municipio_id, llama a la función registrar_reporte inmediatamente.
 Si el usuario envía una foto o audio, úsalo como evidencia.
-Respuestas cortas y directas. No uses menús ni listas de botones. Nunca le pidas al usuario que formatee la ubicación de una manera específica.`
+Respuestas cortas y directas. No uses menús ni listas de botones. Nunca le pidas al usuario que escriba un municipio o departamento.`
+}
 
 function getClient() {
   return new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
@@ -55,46 +79,17 @@ async function deleteSesion(telefonoId: string) {
   await getSupabaseAdmin().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
-async function geocodificar(textoLibre: string): Promise<{ lat: number; lng: number; municipio: string; departamento: string } | null> {
-  const supabase = getSupabaseAdmin()
-  // Intenta con cada palabra o fragmento del texto (palabras de 4+ letras)
-  const terminos = textoLibre
-    .split(/[\s,]+/)
-    .map((t) => t.trim())
-    .filter((t) => t.length >= 4)
-
-  for (const termino of terminos) {
-    const { data } = await supabase
-      .from('municipios')
-      .select('lat, lng, municipio, departamento')
-      .ilike('municipio', `%${termino}%`)
-      .limit(1)
-      .single()
-    if (data) return data
-  }
-
-  // Último intento: busca el texto completo contra departamento
-  for (const termino of terminos) {
-    const { data } = await supabase
-      .from('municipios')
-      .select('lat, lng, municipio, departamento')
-      .ilike('departamento', `%${termino}%`)
-      .limit(1)
-      .single()
-    if (data) return data
-  }
-
-  return null
-}
-
 async function crearReporte(
   telefonoId: string,
   campos: Record<string, string>,
+  municipios: Municipio[],
   nombreReportante?: string,
   telegramUsername?: string
 ) {
-  const textoUbicacion = campos.ubicacion ?? ''
-  const geo = await geocodificar(textoUbicacion)
+  // Gemini ya identificó el municipio correcto — solo buscamos sus coordenadas
+  const geo = municipios.find(
+    (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
+  ) ?? null
 
   const { error } = await getSupabaseAdmin().from('reportes').insert({
     telefono_reporte: telefonoId,
@@ -102,7 +97,7 @@ async function crearReporte(
     telegram_username: telegramUsername ?? null,
     tipo: campos.tipo,
     nombre_lugar: campos.nombre_lugar,
-    municipio: geo?.municipio ?? textoUbicacion,
+    municipio: geo?.municipio ?? campos.municipio_id ?? null,
     departamento: geo?.departamento ?? null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
@@ -172,6 +167,10 @@ export async function procesarMensaje(
   }
   const historial: Content[] = sesion?.datos_temp?.historial ?? []
 
+  const municipios = await getMunicipios()
+  const systemPrompt = buildSystemPrompt(municipios)
+  const municipioNames = municipios.map((m) => m.municipio)
+
   // Build parts for the user turn
   const parts: Part[] = []
 
@@ -192,7 +191,7 @@ export async function procesarMensaje(
   const ai = getClient()
   const model = ai.getGenerativeModel({
     model: 'gemini-2.5-flash',
-    systemInstruction: SYSTEM_PROMPT,
+    systemInstruction: systemPrompt,
     tools: [
       {
         functionDeclarations: [
@@ -212,16 +211,18 @@ export async function procesarMensaje(
                   type: SchemaType.STRING,
                   description: 'Nombre del comedor o institución educativa',
                 },
-                ubicacion: {
+                municipio_id: {
                   type: SchemaType.STRING,
-                  description: 'Lugar tal como lo describió el usuario: ciudad, barrio, vereda o cualquier referencia geográfica.',
+                  format: 'enum',
+                  enum: municipioNames,
+                  description: 'Municipio exacto de la lista, identificado por el bot según lo que dijo el usuario',
                 },
                 evidencia: {
                   type: SchemaType.STRING,
                   description: 'Descripción adicional u observaciones (opcional)',
                 },
               },
-              required: ['tipo', 'nombre_lugar', 'ubicacion'],
+              required: ['tipo', 'nombre_lugar', 'municipio_id'],
             },
           },
         ],
@@ -240,7 +241,7 @@ export async function procesarMensaje(
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
     try {
-      await crearReporte(telefonoId, campos, nombreReportante, telegramUsername)
+      await crearReporte(telefonoId, campos, municipios, nombreReportante, telegramUsername)
       await deleteSesion(telefonoId)
       await sendMessage(
         chatId,
