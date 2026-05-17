@@ -20,6 +20,12 @@ supabase/.temp/
 .DS_Store
 Thumbs.db
 
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Temp dev folder
+frontend/
+
 # Logs
 *.log
 npm-debug.log*
