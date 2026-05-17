@@ -77,7 +77,12 @@ export default function Dashboard() {
           <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
           <h1 className="font-semibold text-sm tracking-wide uppercase">Dashboard Validadores</h1>
         </div>
-        <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
+        <div className="flex items-center gap-4">
+          <a href="/historico" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            Ver histórico →
+          </a>
+          <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
+        </div>
       </header>
 
       <div className="p-6">
