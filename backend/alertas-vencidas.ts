@@ -1,7 +1,9 @@
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from './supabase-admin'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 const ESTADOS_PENDIENTES = ['pendiente', 'en_revision'] as const
 const DIAS_LIMITE = 7
@@ -74,7 +76,7 @@ async function enviarEmail(para: string, nombre: string, reporte: Reporte) {
     (Date.now() - new Date(reporte.created_at).getTime()) / (1000 * 60 * 60 * 24)
   )
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_EMAIL,
     to: para,
     subject: `⚠️ Alerta sin resolución: ${reporte.municipio} — ${dias} días`,
