@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { procesarAlertasVencidas } from '@/backend/alertas-vencidas'
+import { notificarError } from '@/backend/notificar-error'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(resultado)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
-    console.error('[cron] alertas-vencidas:', message)
+    await notificarError('cron/alertas-vencidas', err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
+import { notificarError } from '@/backend/notificar-error'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,13 +14,19 @@ export async function GET(req: NextRequest) {
   if (municipio) query = query.eq('municipio', municipio)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    await notificarError('api/reportes GET', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data)
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { data, error } = await getSupabaseAdmin().from('reportes').insert(body).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    await notificarError('api/reportes POST', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data, { status: 201 })
 }
