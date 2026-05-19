@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
 type Estado = 'esperando' | 'listo' | 'guardado' | 'error_token'
@@ -12,10 +12,12 @@ export default function NuevaContrasena() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
-  const supabase = createBrowserClient(
+  // useRef para que el cliente no cambie entre renders y el useEffect solo corra una vez
+  const supabaseRef = useRef(createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  ))
+  const supabase = supabaseRef.current
 
   useEffect(() => {
     // Flujo PKCE: Supabase envía ?code= en la URL, hay que intercambiarlo por sesión
@@ -47,7 +49,7 @@ export default function NuevaContrasena() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [supabase])
+  }, [])
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
