@@ -20,7 +20,7 @@ export default function Recuperar() {
     setError(null)
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login/nueva-contrasena`,
+      redirectTo: `${window.location.origin}/api/auth/callback`,
     })
 
     if (error) {

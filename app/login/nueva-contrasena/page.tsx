@@ -12,7 +12,6 @@ export default function NuevaContrasena() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
-  // useRef para que el cliente no cambie entre renders y el useEffect solo corra una vez
   const supabaseRef = useRef(createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -20,37 +19,15 @@ export default function NuevaContrasena() {
   const supabase = supabaseRef.current
 
   useEffect(() => {
-    // Flujo PKCE: Supabase envía ?code= en la URL, hay que intercambiarlo por sesión
-    const code = new URLSearchParams(window.location.search).get('code')
-
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          setEstado('error_token')
-          console.error('[nueva-contrasena] exchangeCodeForSession error:', error.message, error.status)
-          setError(error.message)
-        } else {
-          setEstado('listo')
-          // Limpia el code de la URL sin recargar la página
-          window.history.replaceState({}, '', '/login/nueva-contrasena')
-        }
-      })
-      return
-    }
-
-    // Flujo implícito (fallback): detecta token en el hash
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setEstado('listo')
+    // El callback del servidor ya intercambió el código y guardó la sesión en cookies.
+    // Solo verificamos que haya una sesión activa.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setEstado('listo')
+      } else {
+        setEstado('error_token')
+      }
     })
-
-    const timeout = setTimeout(() => {
-      setEstado((prev) => prev === 'esperando' ? 'error_token' : prev)
-    }, 3000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
-    }
   }, [])
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -72,7 +49,7 @@ export default function NuevaContrasena() {
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setError('No se pudo actualizar la contraseña. El enlace puede haber expirado.')
+      setError('No se pudo actualizar la contraseña. ' + error.message)
       setCargando(false)
       return
     }
@@ -95,7 +72,7 @@ export default function NuevaContrasena() {
 
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           {estado === 'esperando' && (
-            <p className="text-gray-400 text-sm text-center py-4">Verificando enlace...</p>
+            <p className="text-gray-400 text-sm text-center py-4">Verificando sesión...</p>
           )}
 
           {estado === 'error_token' && (
@@ -104,7 +81,6 @@ export default function NuevaContrasena() {
               <p className="text-gray-400 text-xs">
                 Este enlace ya fue usado o ha expirado. Solicita uno nuevo.
               </p>
-              {error && <p className="text-gray-500 text-xs font-mono">{error}</p>}
               <a href="/login/recuperar" className="block text-xs text-gray-400 hover:text-white transition-colors mt-2">
                 Solicitar nuevo enlace →
               </a>
