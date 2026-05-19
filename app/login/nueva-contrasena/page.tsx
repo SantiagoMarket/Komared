@@ -27,6 +27,8 @@ export default function NuevaContrasena() {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
           setEstado('error_token')
+          console.error('[nueva-contrasena] exchangeCodeForSession error:', error.message, error.status)
+          setError(error.message)
         } else {
           setEstado('listo')
           // Limpia el code de la URL sin recargar la página
@@ -102,6 +104,7 @@ export default function NuevaContrasena() {
               <p className="text-gray-400 text-xs">
                 Este enlace ya fue usado o ha expirado. Solicita uno nuevo.
               </p>
+              {error && <p className="text-gray-500 text-xs font-mono">{error}</p>}
               <a href="/login/recuperar" className="block text-xs text-gray-400 hover:text-white transition-colors mt-2">
                 Solicitar nuevo enlace →
               </a>
