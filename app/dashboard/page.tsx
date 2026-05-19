@@ -82,6 +82,11 @@ export default function Dashboard() {
             Ver histórico →
           </a>
           <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
+          <form action="/api/auth/logout" method="POST">
+            <button type="submit" className="text-xs text-gray-500 hover:text-red-400 transition-colors">
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </header>
 
