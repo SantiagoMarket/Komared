@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const RUTAS_PROTEGIDAS = ['/dashboard', '/historico']
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
   const { pathname } = req.nextUrl
 

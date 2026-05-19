@@ -1,14 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function Login() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const next = searchParams.get('next') ?? '/dashboard'
-
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -19,7 +14,7 @@ export default function Login() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     setCargando(true)
     setError(null)
@@ -32,10 +27,53 @@ export default function Login() {
       return
     }
 
-    router.push(next)
-    router.refresh()
+    const params = new URLSearchParams(window.location.search)
+    window.location.href = params.get('next') ?? '/dashboard'
   }
 
+  return (
+    <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+      <div>
+        <label className="block text-xs text-gray-400 mb-1.5">Correo electrónico</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500 placeholder-gray-600"
+          placeholder="correo@ejemplo.com"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs text-gray-400 mb-1.5">Contraseña</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+        />
+      </div>
+
+      {error && (
+        <p className="text-red-400 text-xs">{error}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={cargando}
+        className="w-full bg-white text-gray-900 font-semibold text-sm rounded-lg py-2.5 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+      >
+        {cargando ? 'Entrando...' : 'Entrar'}
+      </button>
+    </form>
+  )
+}
+
+export default function Login() {
   return (
     <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -47,44 +85,9 @@ export default function Login() {
           <p className="text-gray-400 text-sm">Acceso para validadores</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Correo electrónico</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500 placeholder-gray-600"
-              placeholder="correo@ejemplo.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
-            />
-          </div>
-
-          {error && (
-            <p className="text-red-400 text-xs">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={cargando}
-            className="w-full bg-white text-gray-900 font-semibold text-sm rounded-lg py-2.5 hover:bg-gray-100 disabled:opacity-50 transition-colors"
-          >
-            {cargando ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
+        <Suspense fallback={<div className="bg-gray-900 border border-gray-800 rounded-xl p-6 h-48" />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   )
