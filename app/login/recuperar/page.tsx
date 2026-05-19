@@ -24,7 +24,7 @@ export default function Recuperar() {
     })
 
     if (error) {
-      setError('No se pudo enviar el correo. Intenta de nuevo.')
+      setError(error.message)
       setCargando(false)
       return
     }
