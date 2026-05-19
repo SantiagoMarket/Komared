@@ -69,6 +69,10 @@ function LoginForm() {
       >
         {cargando ? 'Entrando...' : 'Entrar'}
       </button>
+
+      <a href="/login/recuperar" className="block text-center text-xs text-gray-500 hover:text-gray-300 transition-colors">
+        ¿Olvidaste tu contraseña?
+      </a>
     </form>
   )
 }
