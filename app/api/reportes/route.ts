@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
+import { createSupabaseServer } from '@/lib/supabase-server'
 import { notificarError } from '@/backend/notificar-error'
 
 export const dynamic = 'force-dynamic'
 
+async function verificarSesion() {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 export async function GET(req: NextRequest) {
+  if (!await verificarSesion()) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   const { searchParams } = new URL(req.url)
   const estado = searchParams.get('estado')
   const municipio = searchParams.get('municipio')
