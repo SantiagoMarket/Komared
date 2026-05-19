@@ -5,6 +5,11 @@ import { notificarError } from '@/backend/notificar-error'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const secret = req.headers.get('x-telegram-bot-api-secret-token')
+  if (!process.env.TELEGRAM_WEBHOOK_SECRET || secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return NextResponse.json({ ok: false }, { status: 401 })
+  }
+
   try {
     const body = await req.json()
 
