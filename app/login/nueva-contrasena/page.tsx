@@ -18,13 +18,27 @@ export default function NuevaContrasena() {
   )
 
   useEffect(() => {
+    // Flujo PKCE: Supabase envía ?code= en la URL, hay que intercambiarlo por sesión
+    const code = new URLSearchParams(window.location.search).get('code')
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setEstado('error_token')
+        } else {
+          setEstado('listo')
+          // Limpia el code de la URL sin recargar la página
+          window.history.replaceState({}, '', '/login/nueva-contrasena')
+        }
+      })
+      return
+    }
+
+    // Flujo implícito (fallback): detecta token en el hash
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setEstado('listo')
-      }
+      if (event === 'PASSWORD_RECOVERY') setEstado('listo')
     })
 
-    // Si llega sin token válido, mostrar error después de un momento
     const timeout = setTimeout(() => {
       setEstado((prev) => prev === 'esperando' ? 'error_token' : prev)
     }, 3000)
@@ -59,6 +73,7 @@ export default function NuevaContrasena() {
       return
     }
 
+    await supabase.auth.signOut()
     setEstado('guardado')
     setTimeout(() => { window.location.href = '/login' }, 2500)
   }
