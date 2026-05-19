@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType, type Content, type Part } from '@google/generative-ai'
-import { getSupabaseAdmin } from '@/backend/supabase-admin'
+import { getSupabaseBot } from '@/backend/supabase-bot'
 import { sendMessage } from '@/backend/telegram'
 
 const TIPOS_VALIDOS = [
@@ -20,7 +20,7 @@ let municipiosCache: Municipio[] | null = null
 
 async function getMunicipios(): Promise<Municipio[]> {
   if (municipiosCache) return municipiosCache
-  const { data } = await getSupabaseAdmin()
+  const { data } = await getSupabaseBot()
     .from('municipios')
     .select('municipio, departamento, lat, lng')
     .order('departamento')
@@ -61,7 +61,7 @@ function getClient() {
 }
 
 async function getSesion(telefonoId: string) {
-  const { data } = await getSupabaseAdmin()
+  const { data } = await getSupabaseBot()
     .from('sesiones_bot')
     .select('*')
     .eq('telefono', telefonoId)
@@ -70,7 +70,7 @@ async function getSesion(telefonoId: string) {
 }
 
 async function setSesion(telefonoId: string, historial: Content[]) {
-  await getSupabaseAdmin().from('sesiones_bot').upsert(
+  await getSupabaseBot().from('sesiones_bot').upsert(
     {
       telefono: telefonoId,
       datos_temp: { historial },
@@ -82,7 +82,7 @@ async function setSesion(telefonoId: string, historial: Content[]) {
 }
 
 async function deleteSesion(telefonoId: string) {
-  await getSupabaseAdmin().from('sesiones_bot').delete().eq('telefono', telefonoId)
+  await getSupabaseBot().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
 async function crearReporte(
@@ -97,7 +97,7 @@ async function crearReporte(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
 
-  const { error } = await getSupabaseAdmin().from('reportes').insert({
+  const { error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
     telegram_username: telegramUsername ?? null,
