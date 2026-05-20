@@ -38,6 +38,14 @@ export default function NuevaContrasena() {
       setError('La contraseña debe tener al menos 8 caracteres.')
       return
     }
+    if (!/[A-Z]/.test(password)) {
+      setError('La contraseña debe incluir al menos una letra mayúscula.')
+      return
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('La contraseña debe incluir al menos un número.')
+      return
+    }
 
     if (password !== confirmacion) {
       setError('Las contraseñas no coinciden.')
@@ -100,6 +108,7 @@ export default function NuevaContrasena() {
                   autoComplete="new-password"
                   className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
                 />
+                <p className="text-gray-600 text-xs mt-1.5">Mínimo 8 caracteres, una mayúscula y un número.</p>
               </div>
 
               <div>

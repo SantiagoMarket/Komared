@@ -28,7 +28,10 @@ function LoginForm() {
     }
 
     const params = new URLSearchParams(window.location.search)
-    window.location.href = params.get('next') ?? '/dashboard'
+    const next = params.get('next') ?? '/dashboard'
+    // Solo permitir rutas relativas internas — bloquea open redirect a dominios externos
+    const destino = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+    window.location.href = destino
   }
 
   return (
