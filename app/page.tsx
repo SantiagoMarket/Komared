@@ -1,4 +1,11 @@
-import { getSupabaseAdmin } from '@/backend/supabase-admin'
+import { createClient } from '@supabase/supabase-js'
+
+function getSupabasePublic() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import PilaresSection from './components/PilaresSection'
@@ -9,7 +16,7 @@ import Footer from './components/Footer'
 
 async function fetchStats() {
   try {
-    const supabase = getSupabaseAdmin()
+    const supabase = getSupabasePublic()
 
     const [
       { count: totalAlertas },
@@ -21,7 +28,7 @@ async function fetchStats() {
       supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'aprobado'),
     ])
 
-    const municipiosActivos = new Set((municipiosData ?? []).map((r) => r.municipio)).size
+    const municipiosActivos = new Set((municipiosData ?? []).map((r: { municipio: string }) => r.municipio)).size
     const tasaResolucion = totalAlertas
       ? Math.round(((aprobados ?? 0) / totalAlertas) * 100)
       : 0
