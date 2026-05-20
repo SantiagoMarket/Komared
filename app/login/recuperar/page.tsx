@@ -36,9 +36,9 @@ export default function Recuperar() {
     <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-white font-semibold text-sm tracking-wide uppercase">Dossier</span>
+          <div className="inline-flex items-center gap-3 mb-3">
+            <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
+            <span className="text-white font-bold text-xl">Koma<span style={{color:'#F4B534'}}>Red</span></span>
           </div>
           <p className="text-gray-400 text-sm">Recuperar contraseña</p>
         </div>

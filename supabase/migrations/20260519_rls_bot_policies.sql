@@ -1,4 +1,4 @@
--- ─── Políticas RLS para el bot (Fase 4) ─────────────────────────────────────
+-- ─── Políticas RLS para KomaBot (Fase 4) ────────────────────────────────────
 --
 -- El bot pasa de usar service_role a usar anon_key.
 -- Estas políticas le dan exactamente lo que necesita, nada más.

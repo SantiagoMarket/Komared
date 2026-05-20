@@ -1,4 +1,4 @@
--- ─── Row Level Security — Dossier ────────────────────────────────────────────
+-- ─── Row Level Security — KomaRed ────────────────────────────────────────────
 --
 -- service_role (usado por bot, cron y API routes) bypassa RLS por diseño en
 -- Supabase — esas rutas no se ven afectadas por ninguna de estas políticas.

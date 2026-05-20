@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 
 const ADMIN_EMAIL = 'sant4cubillos@outlook.com'
-const FROM_EMAIL = 'Dossier Errores <alertas@santiagocoder.com>'
+const FROM_EMAIL = 'KomaRed Errores <alertas@santiagocoder.com>'
 
 export async function notificarError(origen: string, err: unknown) {
   const mensaje = err instanceof Error ? err.message : String(err)
@@ -14,27 +14,59 @@ export async function notificarError(origen: string, err: unknown) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: ADMIN_EMAIL,
-      subject: `🚨 Error en Dossier — ${origen}`,
+      subject: `🚨 Error en KomaRed — ${origen}`,
       html: `
-        <div style="font-family: monospace; max-width: 700px; margin: 0 auto;">
-          <h2 style="color: #b91c1c;">🚨 Error en el sistema</h2>
-          <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
-            <tr style="background:#f3f4f6;">
-              <td style="padding:8px; font-weight:bold; width:120px;">Origen</td>
-              <td style="padding:8px;">${origen}</td>
-            </tr>
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb;">
+
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1C3828;">
             <tr>
-              <td style="padding:8px; font-weight:bold;">Fecha</td>
-              <td style="padding:8px;">${new Date().toISOString()}</td>
-            </tr>
-            <tr style="background:#f3f4f6;">
-              <td style="padding:8px; font-weight:bold;">Error</td>
-              <td style="padding:8px; color:#b91c1c;">${mensaje}</td>
+              <td style="padding: 20px 28px;">
+                <span style="color: #ffffff; font-size: 20px; font-weight: bold; font-family: Arial, sans-serif;">Koma<span style="color: #F4B534;">Red</span></span>
+                <span style="color: #9ca3af; font-size: 10px; letter-spacing: 2px; margin-left: 12px;">SISTEMA DE MONITOREO</span>
+              </td>
             </tr>
           </table>
-          ${stack ? `<pre style="background:#1f2937; color:#f9fafb; padding:16px; border-radius:6px; font-size:12px; overflow-x:auto; white-space:pre-wrap;">${stack}</pre>` : ''}
-          <hr style="border:none; border-top:1px solid #e5e7eb; margin: 24px 0;">
-          <p style="font-size:12px; color:#9ca3af;">Dossier — Sistema de monitoreo</p>
+
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background: #587546; height: 4px; width: 50%;"></td>
+              <td style="background: #F4B534; height: 4px; width: 50%;"></td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding: 28px;">
+                <h2 style="color: #b91c1c; margin: 0 0 20px; font-size: 18px;">🚨 Error en el sistema</h2>
+
+                <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden;">
+                  <tr style="background: #f9fafb;">
+                    <td style="padding: 10px 14px; font-weight: bold; width: 110px; color: #374151; border-bottom: 1px solid #e5e7eb;">Origen</td>
+                    <td style="padding: 10px 14px; color: #374151; border-bottom: 1px solid #e5e7eb;">${origen}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 14px; font-weight: bold; color: #374151; border-bottom: 1px solid #e5e7eb;">Fecha</td>
+                    <td style="padding: 10px 14px; color: #374151; border-bottom: 1px solid #e5e7eb;">${new Date().toISOString()}</td>
+                  </tr>
+                  <tr style="background: #fef2f2;">
+                    <td style="padding: 10px 14px; font-weight: bold; color: #374151;">Error</td>
+                    <td style="padding: 10px 14px; color: #b91c1c;">${mensaje}</td>
+                  </tr>
+                </table>
+
+                ${stack ? `<pre style="background: #1f2937; color: #f9fafb; padding: 16px; border-radius: 6px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; margin-top: 16px;">${stack}</pre>` : ''}
+              </td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: #1C3828;">
+            <tr>
+              <td style="padding: 14px 28px; text-align: center;">
+                <p style="margin: 0; color: #9ca3af; font-size: 11px;">KomaRed — Sistema de monitoreo</p>
+              </td>
+            </tr>
+          </table>
+
         </div>
       `,
     })

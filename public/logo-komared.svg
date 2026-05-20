@@ -1,0 +1,17 @@
+<svg width="44" height="56" viewBox="0 0 44 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="head">
+      <circle cx="22" cy="20" r="20"/>
+    </clipPath>
+  </defs>
+  <!-- Comma tail -->
+  <path d="M22 40 C20 47 9 54 5 48 C2 43 16 39 16 26 L22 26 Z" fill="#1C3828"/>
+  <!-- Circle head -->
+  <circle cx="22" cy="20" r="20" fill="#1C3828"/>
+  <!-- Gold sun -->
+  <circle cx="22" cy="13" r="14" fill="#F4B534" clip-path="url(#head)"/>
+  <!-- Green horizon arc -->
+  <path d="M2 23 Q22 12 42 23 L42 40 L2 40 Z" fill="#1C3828" clip-path="url(#head)"/>
+  <!-- Green leaf accent -->
+  <path d="M29 14 C32 9 38 12 36 18 C32 16 27 18 29 14Z" fill="#587546" clip-path="url(#head)"/>
+</svg>

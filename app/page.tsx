@@ -5,13 +5,20 @@ export default function Home() {
     <main className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6 text-center">
       <div className="max-w-2xl flex flex-col items-center gap-8">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-red-400 text-sm font-medium tracking-widest uppercase">En vivo</span>
+          <span className="w-3 h-3 rounded-full bg-[#F4B534] animate-pulse" />
+          <span className="text-[#F4B534] text-sm font-medium tracking-widest uppercase">En vivo</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <img src="/logo-komared.svg" alt="KomaRed" className="h-10 w-auto" />
+          <span className="text-white font-bold text-3xl sm:text-4xl">
+            Koma<span className="text-[#F4B534]">Red</span>
+          </span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight">
           Veeduría ciudadana<br />
-          <span className="text-red-400">contra el hambre</span>
+          <span className="text-[#F4B534]">contra el hambre</span>
         </h1>
 
         <p className="text-gray-400 text-lg leading-relaxed max-w-xl">
@@ -22,7 +29,7 @@ export default function Home() {
 
         <Link
           href="/mapa"
-          className="mt-2 px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-semibold text-lg rounded-full transition-colors"
+          className="mt-2 px-8 py-4 bg-[#1C3828] hover:bg-[#587546] text-white font-semibold text-lg rounded-full transition-colors"
         >
           Ver mapa de reportes
         </Link>
@@ -44,7 +51,7 @@ export default function Home() {
       </div>
 
       <footer className="absolute bottom-6 text-gray-600 text-xs">
-        Dossier · Inteligencia cívica sobre seguridad alimentaria
+        KomaRed · Vigilancia ciudadana en torno a la alimentación
       </footer>
     </main>
   )
