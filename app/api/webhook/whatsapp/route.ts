@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { procesarMensaje } from '@/backend/bot'
+import { enviarMensaje, descargarMedia } from '@/backend/whatsapp'
+import { notificarError } from '@/backend/notificar-error'
+
+export const dynamic = 'force-dynamic'
+
+// Meta verifica el webhook con un GET enviando hub.challenge
+export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl
+  const mode = searchParams.get('hub.mode')
+  const token = searchParams.get('hub.verify_token')
+  const challenge = searchParams.get('hub.challenge')
+
+  if (mode === 'subscribe' && token === process.env.WHATSAPP_WEBHOOK_SECRET) {
+    return new NextResponse(challenge, { status: 200 })
+  }
+
+  return NextResponse.json({ ok: false }, { status: 403 })
+}
+
+export async function POST(req: NextRequest) {
+  // Meta no envía un header de firma por defecto en Cloud API —
+  // verificamos que el payload sea de WhatsApp por su estructura.
+  try {
+    const body = await req.json()
+
+    if (body.object !== 'whatsapp_business_account') {
+      return NextResponse.json({ ok: false }, { status: 400 })
+    }
+
+    for (const entry of body.entry ?? []) {
+      for (const change of entry.changes ?? []) {
+        if (change.field !== 'messages') continue
+
+        const value = change.value
+        const messages: WhatsAppMessage[] = value.messages ?? []
+
+        for (const msg of messages) {
+          await procesarWhatsApp(msg)
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    await notificarError('webhook/whatsapp', err)
+    return NextResponse.json({ ok: false }, { status: 500 })
+  }
+}
+
+type WhatsAppMessage = {
+  from: string
+  type: 'text' | 'image' | 'audio' | 'video' | 'document' | 'voice'
+  text?: { body: string }
+  image?: { id: string; mime_type: string }
+  audio?: { id: string; mime_type: string }
+  video?: { id: string; mime_type: string }
+  voice?: { id: string; mime_type: string }
+}
+
+async function procesarWhatsApp(msg: WhatsAppMessage) {
+  const telefonoId = msg.from
+  const texto = msg.text?.body ?? ''
+
+  let media: { data: string; mimeType: string } | undefined
+
+  const mediaItem = msg.image ?? msg.audio ?? msg.voice ?? msg.video
+  if (mediaItem) {
+    media = await descargarMedia(mediaItem.id) ?? undefined
+  }
+
+  await procesarMensaje({
+    telefonoId,
+    texto,
+    sendReply: (text) => enviarMensaje(telefonoId, text),
+    canal: 'whatsapp',
+    media,
+  })
+}

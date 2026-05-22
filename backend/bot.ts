@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType, type Content, type Part } from '@google/generative-ai'
 import { getSupabaseBot } from '@/backend/supabase-bot'
-import { sendMessage } from '@/backend/telegram'
 
 const TIPOS_VALIDOS = [
   'comedor_sin_alimentos',
@@ -50,7 +49,7 @@ Debes recopilar exactamente estos campos:
 
 Lista de municipios válidos: ${listaMunicipios}
 
-Cuando el usuario te salude, preséntate como DossierBot y explica que puedes ayudarle a reportar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
+Cuando el usuario te salude, preséntate como KomaBot y explica que puedes ayudarle a reportar cuando un comedor no tiene alimentos o no ha llegado el programa PAE.
 Cuando tengas tipo, nombre_lugar y municipio_id, guarda el reporte automáticamente.
 Si el usuario envía una foto o audio, úsalo como evidencia.
 Respuestas cortas y directas. No uses menús ni listas de botones. Nunca le pidas al usuario que escriba un municipio o departamento.`
@@ -89,10 +88,10 @@ async function crearReporte(
   telefonoId: string,
   campos: Record<string, string>,
   municipios: Municipio[],
+  canal: 'telegram' | 'whatsapp',
   nombreReportante?: string,
   telegramUsername?: string
 ) {
-  // Gemini ya identificó el municipio correcto — solo buscamos sus coordenadas
   const geo = municipios.find(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
@@ -107,55 +106,33 @@ async function crearReporte(
     departamento: geo?.departamento ?? null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
-    canal: 'telegram' as const,
+    canal,
     estado: 'aprobado',
   })
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
 }
 
-async function fetchTelegramFile(fileId: string, forceAudio = false): Promise<{ data: string; mimeType: string } | null> {
-  try {
-    const fileRes = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
-    )
-    const fileData = await fileRes.json()
-    const filePath: string = fileData.result?.file_path
-    if (!filePath) return null
-
-    const res = await fetch(
-      `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${filePath}`
-    )
-    const buffer = await res.arrayBuffer()
-    const data = Buffer.from(buffer).toString('base64')
-
-    let mimeType: string
-    if (forceAudio) {
-      mimeType = 'audio/ogg'
-    } else if (filePath.endsWith('.png')) {
-      mimeType = 'image/png'
-    } else {
-      mimeType = 'image/jpeg'
-    }
-
-    return { data, mimeType }
-  } catch {
-    return null
-  }
-}
-
-export async function procesarMensaje(
-  chatId: number,
-  telefonoId: string,
-  texto: string,
-  fileId?: string,
-  nombreReportante?: string,
-  telegramUsername?: string,
-  isVoice?: boolean
-) {
+export async function procesarMensaje({
+  telefonoId,
+  texto,
+  sendReply,
+  canal,
+  media,
+  nombreReportante,
+  telegramUsername,
+}: {
+  telefonoId: string
+  texto: string
+  sendReply: (text: string) => Promise<void>
+  canal: 'telegram' | 'whatsapp'
+  media?: { data: string; mimeType: string }
+  nombreReportante?: string
+  telegramUsername?: string
+}) {
   if (texto === '/cancelar') {
     await deleteSesion(telefonoId)
-    await sendMessage(chatId, '❌ Reporte cancelado. Escribe /nuevo para empezar de nuevo.')
+    await sendReply('❌ Reporte cancelado. Escribe /nuevo para empezar de nuevo.')
     return
   }
 
@@ -177,14 +154,10 @@ export async function procesarMensaje(
   const systemPrompt = buildSystemPrompt(municipios)
   const municipioNames = municipios.map((m) => m.municipio)
 
-  // Build parts for the user turn
   const parts: Part[] = []
 
-  if (fileId) {
-    const file = await fetchTelegramFile(fileId, isVoice)
-    if (file) {
-      parts.push({ inlineData: { data: file.data, mimeType: file.mimeType } })
-    }
+  if (media) {
+    parts.push({ inlineData: { data: media.data, mimeType: media.mimeType } })
   }
 
   const textoFinal = texto.trim()
@@ -241,32 +214,26 @@ export async function procesarMensaje(
   const result = await chat.sendMessage(parts)
   const response = result.response
 
-  // Check for function call
   const functionCall = response.candidates?.[0]?.content?.parts?.find((p) => p.functionCall)?.functionCall
 
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
     try {
-      await crearReporte(telefonoId, campos, municipios, nombreReportante, telegramUsername)
+      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername)
       await deleteSesion(telefonoId)
-      await sendMessage(
-        chatId,
-        '✅ <b>¡Reporte registrado!</b>\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
+      await sendReply(
+        '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
       )
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('Error guardando reporte:', msg)
-      await sendMessage(
-        chatId,
-        '⚠️ Hubo un error al guardar tu reporte. Por favor intenta de nuevo con /nuevo.'
-      )
+      await sendReply('⚠️ Hubo un error al guardar tu reporte. Por favor intenta de nuevo con /nuevo.')
     }
     return
   }
 
   const textoRespuesta = response.text()
 
-  // Save updated history
   const modelContent: Content = {
     role: 'model',
     parts: response.candidates?.[0]?.content?.parts ?? [{ text: textoRespuesta }],
@@ -275,12 +242,6 @@ export async function procesarMensaje(
   await setSesion(telefonoId, historial)
 
   if (textoRespuesta) {
-    await sendMessage(chatId, textoRespuesta)
-  }
-}
-
-export async function procesarCallback(chatId: number, telefonoId: string, data: string) {
-  if (data === 'omitir_evidencia') {
-    await procesarMensaje(chatId, telefonoId, 'omitir evidencia')
+    await sendReply(textoRespuesta)
   }
 }
