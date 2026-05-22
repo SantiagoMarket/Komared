@@ -8,6 +8,7 @@ const links = {
     { label: 'Propósito', href: '#proposito' },
     { label: 'Únete a la red', href: '#unete' },
     { label: 'Acceso validadores', href: '/login' },
+    { label: 'Política de privacidad', href: '/politica-de-privacidad' },
   ],
 }
 
