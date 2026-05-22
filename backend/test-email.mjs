@@ -25,7 +25,7 @@ const nombreDestinatario = 'Santiago (prueba)'
 console.log('Enviando email de prueba a sant4cubillos@gmail.com...')
 
 const { data, error } = await resend.emails.send({
-  from: 'KomaRed Alertas <alertas@santiagocoder.com>',
+  from: 'KomaRed Alertas <alertas@komared.com>',
   to: 'Jenifergomezcorreos@gmail.com',
   subject: `⚠️ Alerta sin resolución: ${reportePrueba.municipio} — ${diasSinResolucion} días`,
   html: `
@@ -140,7 +140,7 @@ const { data, error } = await resend.emails.send({
       <table width="100%" cellpadding="0" cellspacing="0" style="background: #1C3828;">
         <tr>
           <td style="padding: 14px 28px; text-align: center;">
-            <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px;">alertas@santiagocoder.com</p>
+            <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px;">alertas@komared.com</p>
             <p style="margin: 0; color: #6b7280; font-size: 11px;">Este es un correo automático, por favor no respondas a este mensaje.</p>
           </td>
         </tr>

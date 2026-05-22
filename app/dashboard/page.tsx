@@ -10,9 +10,6 @@ type Reporte = {
   municipio: string | null
   departamento: string | null
   estado: string
-  nombre_reportante: string | null
-  telegram_username: string | null
-  telefono_reporte: string
   created_at: string
 }
 
@@ -41,7 +38,7 @@ export default function Dashboard() {
   const cargarReportes = useCallback(async () => {
     const { data } = await supabase
       .from('reportes')
-      .select('id, tipo, nombre_lugar, municipio, departamento, estado, nombre_reportante, telegram_username, telefono_reporte, created_at')
+      .select('id, tipo, nombre_lugar, municipio, departamento, estado, created_at')
       .in('estado', ['aprobado', 'critico'])
       .order('created_at', { ascending: false })
     setReportes((data as Reporte[]) ?? [])
@@ -103,8 +100,7 @@ export default function Dashboard() {
                   <th className="pb-3 pr-4">Tipo</th>
                   <th className="pb-3 pr-4">Lugar</th>
                   <th className="pb-3 pr-4">Municipio</th>
-                  <th className="pb-3 pr-4">Contacto</th>
-                  <th className="pb-3 pr-4">Telegram</th>
+
                   <th className="pb-3 pr-4">Estado</th>
                   <th className="pb-3 pr-4">Fecha</th>
                   <th className="pb-3">Acción</th>
@@ -118,21 +114,7 @@ export default function Dashboard() {
                     <td className="py-3 pr-4 text-gray-300">
                       {[r.municipio, r.departamento].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="py-3 pr-4 text-gray-300">{r.nombre_reportante ?? '—'}</td>
-                    <td className="py-3 pr-4">
-                      {r.telegram_username ? (
-                        <a
-                          href={`https://t.me/${r.telegram_username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline"
-                        >
-                          @{r.telegram_username}
-                        </a>
-                      ) : (
-                        <span className="text-gray-500">ID: {r.telefono_reporte}</span>
-                      )}
-                    </td>
+
                     <td className="py-3 pr-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${COLORES_ESTADO[r.estado] ?? ''}`}>
                         {r.estado}

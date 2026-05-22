@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'sant4cubillos@outlook.com'
-const FROM_EMAIL = 'KomaRed Errores <alertas@santiagocoder.com>'
+const FROM_EMAIL = 'KomaRed Errores <alertas@komared.com>'
 
 export async function notificarError(origen: string, err: unknown) {
   const mensaje = err instanceof Error ? err.message : String(err)

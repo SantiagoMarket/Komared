@@ -7,7 +7,7 @@ function getResend() {
 
 const ESTADOS_PENDIENTES = ['pendiente', 'en_revision'] as const
 const DIAS_LIMITE = 7
-const FROM_EMAIL = 'KomaRed Alertas <alertas@santiagocoder.com>'
+const FROM_EMAIL = 'KomaRed Alertas <alertas@komared.com>'
 
 interface Reporte {
   id: string
@@ -197,7 +197,7 @@ async function enviarEmail(para: string, nombre: string, reporte: Reporte) {
         <table width="100%" cellpadding="0" cellspacing="0" style="background: #1C3828;">
           <tr>
             <td style="padding: 14px 28px; text-align: center;">
-              <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px;">alertas@santiagocoder.com</p>
+              <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px;">alertas@komared.com</p>
               <p style="margin: 0; color: #6b7280; font-size: 11px;">Este es un correo automático, por favor no respondas a este mensaje.</p>
             </td>
           </tr>
