@@ -12,7 +12,6 @@ type ReporteDetalle = {
   created_at: string
   personas_afectadas: number | null
   tiempo_situacion_dias: number | null
-  evidencia: string | null
   canal: string | null
   media_url: string | null
   media_mime_type: string | null
@@ -141,14 +140,6 @@ export default function DetalleReporte({ params }: { params: { id: string } }) {
                 <p className="text-2xl font-bold text-red-400">{reporte.tiempo_situacion_dias} días</p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Evidencia textual */}
-        {reporte.evidencia && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">Descripción del ciudadano</p>
-            <p className="text-gray-200 text-sm leading-relaxed">{reporte.evidencia}</p>
           </div>
         )}
 

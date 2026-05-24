@@ -18,7 +18,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   }
 
   const { id } = await params
-  const CAMPOS_PUBLICOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, evidencia, canal, media_url, media_mime_type'
+  const CAMPOS_PUBLICOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, canal, media_url, media_mime_type'
   const { data, error } = await getSupabaseAdmin().from('reportes').select(CAMPOS_PUBLICOS).eq('id', id).single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
   return NextResponse.json(data)
