@@ -67,7 +67,7 @@ const LABEL_ESTADO: Record<string, string> = {
 
 const DEPARTAMENTOS_PRIORITARIOS = ['La Guajira', 'Chocó', 'Magdalena', 'Cesar']
 
-type Tab = 'reportes' | 'tiempo'
+type Tab = 'reportes' | 'tiempo' | 'personas'
 
 export default function Historico() {
   const [reportes, setReportes] = useState<Reporte[]>([])
@@ -132,10 +132,14 @@ export default function Historico() {
         if (a.tieneCritico !== b.tieneCritico) return a.tieneCritico ? -1 : 1
         return b.total - a.total
       })
-    } else {
+    } else if (tab === 'tiempo') {
       // Por tiempo promedio descendente — solo los que tienen datos
       filas = filas.filter((f) => f.promedioTiempo !== null)
       filas.sort((a, b) => (b.promedioTiempo ?? 0) - (a.promedioTiempo ?? 0))
+    } else {
+      // Por personas afectadas descendente — solo los que tienen datos
+      filas = filas.filter((f) => f.totalPersonas > 0)
+      filas.sort((a, b) => b.totalPersonas - a.totalPersonas)
     }
 
     return filas
@@ -143,6 +147,7 @@ export default function Historico() {
 
   const maxTotal = ranking[0]?.total ?? 1
   const maxTiempo = ranking[0]?.promedioTiempo ?? 1
+  const maxPersonas = ranking[0]?.totalPersonas ?? 1
 
   const departamentos = useMemo(() => {
     const deps = new Set(reportes.map((r) => r.departamento).filter(Boolean) as string[])
@@ -220,6 +225,12 @@ export default function Historico() {
             >
               Por tiempo promedio
             </button>
+            <button
+              onClick={() => { setTab('personas'); setMunicipioSeleccionado(null) }}
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === 'personas' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              Por personas afectadas
+            </button>
           </div>
 
           <div className="grid grid-cols-5 gap-6">
@@ -227,7 +238,7 @@ export default function Historico() {
             <div className="col-span-3 bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-sm uppercase tracking-wide text-gray-300">
-                  {tab === 'reportes' ? 'Ranking por municipio' : 'Ranking por tiempo en situación'}
+                  {tab === 'reportes' ? 'Ranking por municipio' : tab === 'tiempo' ? 'Ranking por tiempo en situación' : 'Ranking por personas afectadas'}
                 </h2>
                 <select
                   value={filtroDepartamento}
@@ -248,6 +259,8 @@ export default function Historico() {
                 <p className="text-gray-600 text-sm py-8 text-center">
                   {tab === 'tiempo'
                     ? 'Sin datos de tiempo reportados para este filtro.'
+                    : tab === 'personas'
+                    ? 'Sin datos de personas afectadas para este filtro.'
                     : 'Sin reportes para este filtro.'}
                 </p>
               ) : (
@@ -256,7 +269,9 @@ export default function Historico() {
                     const seleccionado = municipioSeleccionado === fila.municipio
                     const valorBarra = tab === 'reportes'
                       ? (fila.total / maxTotal) * 100
-                      : ((fila.promedioTiempo ?? 0) / maxTiempo) * 100
+                      : tab === 'tiempo'
+                      ? ((fila.promedioTiempo ?? 0) / maxTiempo) * 100
+                      : (fila.totalPersonas / maxPersonas) * 100
 
                     return (
                       <button
@@ -276,13 +291,15 @@ export default function Historico() {
                           <span className="text-white font-bold text-sm shrink-0">
                             {tab === 'reportes'
                               ? `${fila.total} rep.`
-                              : `${fila.promedioTiempo} días`}
+                              : tab === 'tiempo'
+                              ? `${fila.promedioTiempo} días`
+                              : `${fila.totalPersonas.toLocaleString('es-CO')} personas`}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 pl-8">
                           <div className="flex-1 bg-gray-800 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all ${tab === 'tiempo' ? 'bg-amber-500' : fila.tieneCritico ? 'bg-red-500' : 'bg-blue-500'}`}
+                              className={`h-full rounded-full transition-all ${tab === 'tiempo' ? 'bg-amber-500' : tab === 'personas' ? 'bg-orange-500' : fila.tieneCritico ? 'bg-red-500' : 'bg-blue-500'}`}
                               style={{ width: `${valorBarra}%` }}
                             />
                           </div>
