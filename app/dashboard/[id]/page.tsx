@@ -13,7 +13,7 @@ type ReporteDetalle = {
   personas_afectadas: number | null
   tiempo_situacion_dias: number | null
   canal: string | null
-  media_url: string | null
+  media_signed_url: string | null
   media_mime_type: string | null
 }
 
@@ -144,19 +144,19 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
         )}
 
         {/* Media */}
-        {reporte.media_url && (
+        {reporte.media_signed_url && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
             <p className="text-gray-500 text-xs uppercase tracking-wide px-5 pt-4 pb-3">Evidencia multimedia</p>
             {esImagen && (
               <img
-                src={reporte.media_url}
+                src={reporte.media_signed_url}
                 alt="Evidencia del reporte"
                 className="w-full object-contain max-h-[480px] bg-black"
               />
             )}
             {esVideo && (
               <video
-                src={reporte.media_url}
+                src={reporte.media_signed_url}
                 controls
                 className="w-full max-h-[480px] bg-black"
               />
@@ -164,7 +164,7 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
             {!esImagen && !esVideo && (
               <div className="px-5 pb-5">
                 <a
-                  href={reporte.media_url}
+                  href={reporte.media_signed_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 text-sm underline"

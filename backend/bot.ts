@@ -123,8 +123,8 @@ async function subirMedia(
     return null
   }
 
-  const { data } = getSupabaseBot().storage.from('reportes-media').getPublicUrl(path)
-  return data.publicUrl
+  // Bucket privado — guardamos el path, no la URL pública
+  return path
 }
 
 async function crearReporte(

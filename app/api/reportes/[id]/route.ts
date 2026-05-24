@@ -18,10 +18,20 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   }
 
   const { id } = await params
-  const CAMPOS_PUBLICOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, canal, media_url, media_mime_type'
-  const { data, error } = await getSupabaseAdmin().from('reportes').select(CAMPOS_PUBLICOS).eq('id', id).single()
+  const CAMPOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, canal, media_url, media_mime_type'
+  const { data, error } = await getSupabaseAdmin().from('reportes').select(CAMPOS).eq('id', id).single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-  return NextResponse.json(data)
+
+  // Generar signed URL (1h) para bucket privado — solo llega a validadores autenticados
+  let media_signed_url: string | null = null
+  if (data.media_url) {
+    const { data: signed } = await getSupabaseAdmin()
+      .storage.from('reportes-media')
+      .createSignedUrl(data.media_url, 3600)
+    media_signed_url = signed?.signedUrl ?? null
+  }
+
+  return NextResponse.json({ ...data, media_url: undefined, media_signed_url })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
