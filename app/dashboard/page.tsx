@@ -66,7 +66,7 @@ export default function Dashboard() {
     const { data } = await supabase
       .from('reportes')
       .select('id, tipo, nombre_lugar, municipio, departamento, estado, created_at')
-      .in('estado', ['pendiente', 'en_curso', 'critico'])
+      .neq('estado', 'solucionado')
       .order('created_at', { ascending: false })
     setReportes((data as Reporte[]) ?? [])
     setCargando(false)
