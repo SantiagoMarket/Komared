@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Siempre 200 — Meta reintenta indefinidamente si recibe 500
     return NextResponse.json({ ok: true })
   } catch (err) {
+    // Error de parsing del body o estructura inesperada — sí notificar
     await notificarError('webhook/whatsapp', err)
-    return NextResponse.json({ ok: false }, { status: 500 })
+    return NextResponse.json({ ok: true }) // 200 igual para evitar reintentos
   }
 }
 
@@ -70,11 +72,23 @@ async function procesarWhatsApp(msg: WhatsAppMessage) {
     media = await descargarMedia(mediaItem.id) ?? undefined
   }
 
-  await procesarMensaje({
-    telefonoId,
-    texto,
-    sendReply: (text) => enviarMensaje(telefonoId, text),
-    canal: 'whatsapp',
-    media,
-  })
+  try {
+    await procesarMensaje({
+      telefonoId,
+      texto,
+      sendReply: (text) => enviarMensaje(telefonoId, text),
+      canal: 'whatsapp',
+      media,
+    })
+  } catch (err) {
+    const msg429 = err instanceof Error && err.message.includes('429')
+    if (msg429) {
+      // Cuota de Gemini agotada — avisar al usuario, no enviar email de error
+      console.warn('[webhook/whatsapp] Gemini 429 - cuota agotada')
+      await enviarMensaje(telefonoId, '⏳ El asistente está temporalmente ocupado. Por favor intenta en unos minutos.')
+    } else {
+      // Error inesperado — notificar al admin
+      await notificarError('webhook/whatsapp procesarMensaje', err)
+    }
+  }
 }
