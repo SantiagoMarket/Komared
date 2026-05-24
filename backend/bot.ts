@@ -119,7 +119,7 @@ async function subirMedia(
     .upload(path, buffer, { contentType: media.mimeType, upsert: false })
 
   if (error) {
-    console.error('Error subiendo media:', error.message)
+    console.error(`[subirMedia] ERROR path=${path} mensaje="${error.message}" statusCode=${(error as { statusCode?: number }).statusCode ?? '?'}`)
     return null
   }
 
