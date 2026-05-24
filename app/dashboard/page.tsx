@@ -63,12 +63,10 @@ export default function Dashboard() {
   const [actualizando, setActualizando] = useState<string | null>(null)
 
   const cargarReportes = useCallback(async () => {
-    const { data } = await supabase
-      .from('reportes')
-      .select('id, tipo, nombre_lugar, municipio, departamento, estado, created_at')
-      .neq('estado', 'solucionado')
-      .order('created_at', { ascending: false })
-    setReportes((data as Reporte[]) ?? [])
+    const res = await fetch('/api/reportes')
+    if (!res.ok) return
+    const data: Reporte[] = await res.json()
+    setReportes(data.filter((r) => r.estado !== 'solucionado'))
     setCargando(false)
   }, [])
 

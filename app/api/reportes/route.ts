@@ -12,6 +12,8 @@ const TIPOS_VALIDOS = [
   'pae_no_entregado',
   'pae_calidad_deficiente',
   'icbf_sin_entrega',
+  'desnutricion_cronica',
+  'deficit_alimentario',
   'otro',
 ] as const
 
