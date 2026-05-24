@@ -1,27 +1,37 @@
 -- ─── Fase 0: Migración de estados y nuevos tipos ────────────────────────────
 --
--- 1. Renombra valores de la columna `estado` en tabla `reportes`
+-- `estado` y `tipo` son enums de PostgreSQL, no columnas de texto.
+-- Se usan ALTER TYPE ... RENAME VALUE (Pg ≥ 10) para renombrar valores
+-- sin necesidad de UPDATE en las filas ni de recrear el tipo.
+--
+-- Cambios en enum `estado_reporte`:
 --    aprobado    → pendiente
 --    en_revision → en_curso
 --    resuelto    → solucionado
 --    critico     → critico (sin cambio)
 --
--- 2. Agrega nuevos tipos de problema (columna `tipo`)
---    desnutricion_cronica, deficit_alimentario
+-- Cambios en enum `tipo_reporte` (o columna texto):
+--    + desnutricion_cronica
+--    + deficit_alimentario
+
+
+-- ─── 1. Renombrar valores del enum estado_reporte ─────────────────────────────
+
+ALTER TYPE estado_reporte RENAME VALUE 'aprobado'    TO 'pendiente';
+ALTER TYPE estado_reporte RENAME VALUE 'en_revision' TO 'en_curso';
+ALTER TYPE estado_reporte RENAME VALUE 'resuelto'    TO 'solucionado';
+
+
+-- ─── 2. Agregar nuevos tipos de problema ──────────────────────────────────────
 --
--- 3. Actualiza la RLS policy de lectura pública
---
--- 4. Recrea la view mapa_reportes_publico con los nuevos estados
+-- Si `tipo` es un enum, se agregan los nuevos valores.
+-- IF NOT EXISTS evita error si ya existen.
+
+ALTER TYPE tipo_reporte ADD VALUE IF NOT EXISTS 'desnutricion_cronica';
+ALTER TYPE tipo_reporte ADD VALUE IF NOT EXISTS 'deficit_alimentario';
 
 
--- ─── 1. Renombrar estados en filas existentes ─────────────────────────────────
-
-UPDATE reportes SET estado = 'pendiente'   WHERE estado = 'aprobado';
-UPDATE reportes SET estado = 'en_curso'    WHERE estado = 'en_revision';
-UPDATE reportes SET estado = 'solucionado' WHERE estado = 'resuelto';
-
-
--- ─── 2. Actualizar RLS: lectura pública solo pendiente + critico ──────────────
+-- ─── 3. Actualizar RLS: lectura pública solo pendiente + critico ──────────────
 
 DROP POLICY IF EXISTS "anon_select_reportes_publicos" ON reportes;
 
@@ -35,7 +45,7 @@ USING (
 );
 
 
--- ─── 3. Recrear view mapa_reportes_publico ────────────────────────────────────
+-- ─── 4. Recrear view mapa_reportes_publico ────────────────────────────────────
 --
 -- Solo expone reportes pendientes y críticos con coordenadas.
 -- `peso` da mayor intensidad a los reportes críticos en el heat layer.
