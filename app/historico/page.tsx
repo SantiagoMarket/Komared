@@ -219,8 +219,7 @@ export default function Historico() {
           {/* Mapa histórico */}
           <MapaHistorico
             reportes={reportes.filter((r) =>
-              (filtroDepartamento === 'todos' || r.departamento === filtroDepartamento) &&
-              r.lat != null && r.lng != null
+              filtroDepartamento === 'todos' || r.departamento === filtroDepartamento
             )}
           />
 

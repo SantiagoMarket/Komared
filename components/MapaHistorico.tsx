@@ -10,8 +10,8 @@ type ReporteGeo = {
   nombre_lugar: string | null
   municipio: string | null
   estado: string
-  lat: number
-  lng: number
+  lat: number | null
+  lng: number | null
 }
 
 const COLOMBIA_CENTER: L.LatLngTuple = [4.571, -74.297]
@@ -76,7 +76,9 @@ export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) 
 
     layer.clearLayers()
 
-    const conCoordenadas = reportes.filter((r) => r.lat && r.lng)
+    const conCoordenadas = reportes.filter(
+      (r): r is ReporteGeo & { lat: number; lng: number } => r.lat != null && r.lng != null
+    )
     if (conCoordenadas.length === 0) return
 
     conCoordenadas.forEach((r) => {
@@ -101,10 +103,8 @@ export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) 
     })
 
     // Ajustar vista a los marcadores visibles
-    if (conCoordenadas.length > 0) {
-      const bounds = L.latLngBounds(conCoordenadas.map((r) => [r.lat, r.lng]))
-      mapa.fitBounds(bounds, { padding: [32, 32], maxZoom: 10 })
-    }
+    const bounds = L.latLngBounds(conCoordenadas.map((r) => [r.lat, r.lng] as L.LatLngTuple))
+    mapa.fitBounds(bounds, { padding: [32, 32], maxZoom: 10 })
   }, [reportes])
 
   return (
