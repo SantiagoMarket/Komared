@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 
 type ReporteDetalle = {
   id: string
@@ -14,7 +13,6 @@ type ReporteDetalle = {
   personas_afectadas: number | null
   tiempo_situacion_dias: number | null
   evidencia: string | null
-  nombre_reportante: string | null
   canal: string | null
   media_url: string | null
   media_mime_type: string | null
@@ -47,9 +45,8 @@ const LABEL_ESTADO: Record<string, string> = {
   solucionado: 'Solucionado',
 }
 
-export default function DetalleReporte() {
-  const { id } = useParams<{ id: string }>()
-  const router = useRouter()
+export default function DetalleReporte({ params }: { params: { id: string } }) {
+  const { id } = params
   const [reporte, setReporte] = useState<ReporteDetalle | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(false)
@@ -77,7 +74,10 @@ export default function DetalleReporte() {
       <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">Reporte no encontrado.</p>
-          <button onClick={() => router.back()} className="text-xs text-gray-500 hover:text-gray-300">
+          <button
+            onClick={() => window.history.back()}
+            className="text-xs text-gray-500 hover:text-gray-300"
+          >
             ← Volver
           </button>
         </div>
@@ -92,7 +92,7 @@ export default function DetalleReporte() {
     <main className="min-h-screen bg-gray-950 text-white">
       <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
         <button
-          onClick={() => router.back()}
+          onClick={() => window.history.back()}
           className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
         >
           ← Volver al dashboard
@@ -182,14 +182,6 @@ export default function DetalleReporte() {
                 </a>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Info del reportante */}
-        {reporte.nombre_reportante && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Reportado por</p>
-            <p className="text-gray-300 text-sm">{reporte.nombre_reportante}</p>
           </div>
         )}
 

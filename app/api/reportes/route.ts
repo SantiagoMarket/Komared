@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
   const estado = searchParams.get('estado')
   const municipio = searchParams.get('municipio')
 
-  let query = getSupabaseAdmin().from('reportes').select('*').order('created_at', { ascending: false })
+  const CAMPOS_PUBLICOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, media_url, media_mime_type, canal'
+  let query = getSupabaseAdmin().from('reportes').select(CAMPOS_PUBLICOS).order('created_at', { ascending: false })
   if (estado) query = query.eq('estado', estado)
   if (municipio) query = query.eq('municipio', municipio)
 
