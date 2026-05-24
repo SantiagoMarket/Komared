@@ -1,34 +1,61 @@
 -- ─── Fase 0: Migración de estados y nuevos tipos ────────────────────────────
 --
--- `estado` y `tipo` son enums de PostgreSQL, no columnas de texto.
--- Se usan ALTER TYPE ... RENAME VALUE (Pg ≥ 10) para renombrar valores
--- sin necesidad de UPDATE en las filas ni de recrear el tipo.
---
--- Cambios en enum `estado_reporte`:
---    aprobado    → pendiente
---    en_revision → en_curso
---    resuelto    → solucionado
---    critico     → critico (sin cambio)
---
--- Cambios en enum `tipo_reporte` (o columna texto):
---    + desnutricion_cronica
---    + deficit_alimentario
+-- Usa bloques DO para que cada operación sea idempotente:
+-- si el valor de origen ya no existe (fue renombrado en un intento anterior)
+-- se omite sin error.
 
 
 -- ─── 1. Renombrar valores del enum estado_reporte ─────────────────────────────
 
-ALTER TYPE estado_reporte RENAME VALUE 'aprobado'    TO 'pendiente';
-ALTER TYPE estado_reporte RENAME VALUE 'en_revision' TO 'en_curso';
-ALTER TYPE estado_reporte RENAME VALUE 'resuelto'    TO 'solucionado';
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'aprobado'
+  ) THEN
+    ALTER TYPE estado_reporte RENAME VALUE 'aprobado' TO 'pendiente';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'en_revision'
+  ) THEN
+    ALTER TYPE estado_reporte RENAME VALUE 'en_revision' TO 'en_curso';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'resuelto'
+  ) THEN
+    ALTER TYPE estado_reporte RENAME VALUE 'resuelto' TO 'solucionado';
+  END IF;
+END $$;
 
 
 -- ─── 2. Agregar nuevos tipos de problema ──────────────────────────────────────
 --
--- Si `tipo` es un enum, se agregan los nuevos valores.
--- IF NOT EXISTS evita error si ya existen.
+-- IF NOT EXISTS garantiza idempotencia.
 
-ALTER TYPE tipo_reporte ADD VALUE IF NOT EXISTS 'desnutricion_cronica';
-ALTER TYPE tipo_reporte ADD VALUE IF NOT EXISTS 'deficit_alimentario';
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'tipo_reporte' AND e.enumlabel = 'desnutricion_cronica'
+  ) THEN
+    ALTER TYPE tipo_reporte ADD VALUE 'desnutricion_cronica';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'tipo_reporte' AND e.enumlabel = 'deficit_alimentario'
+  ) THEN
+    ALTER TYPE tipo_reporte ADD VALUE 'deficit_alimentario';
+  END IF;
+END $$;
 
 
 -- ─── 3. Actualizar RLS: lectura pública solo pendiente + critico ──────────────
@@ -46,9 +73,6 @@ USING (
 
 
 -- ─── 4. Recrear view mapa_reportes_publico ────────────────────────────────────
---
--- Solo expone reportes pendientes y críticos con coordenadas.
--- `peso` da mayor intensidad a los reportes críticos en el heat layer.
 
 DROP VIEW IF EXISTS mapa_reportes_publico;
 
