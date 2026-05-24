@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import dynamic from 'next/dynamic'
+
+const MapaHistorico = dynamic(() => import('@/components/MapaHistorico'), { ssr: false })
 
 type Reporte = {
   id: string
@@ -12,6 +15,8 @@ type Reporte = {
   created_at: string
   personas_afectadas: number | null
   tiempo_situacion_dias: number | null
+  lat: number | null
+  lng: number | null
 }
 
 type FilaMunicipio = {
@@ -210,6 +215,14 @@ export default function Historico() {
               <p className="text-2xl font-bold text-red-400">{depMasCritico}</p>
             </div>
           </div>
+
+          {/* Mapa histórico */}
+          <MapaHistorico
+            reportes={reportes.filter((r) =>
+              (filtroDepartamento === 'todos' || r.departamento === filtroDepartamento) &&
+              r.lat != null && r.lng != null
+            )}
+          />
 
           {/* Tabs */}
           <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
