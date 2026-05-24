@@ -90,17 +90,41 @@ async function deleteSesion(telefonoId: string) {
   await getSupabaseBot().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
+async function subirMedia(
+  telefonoId: string,
+  media: { data: string; mimeType: string }
+): Promise<string | null> {
+  const ext = media.mimeType.split('/')[1]?.split(';')[0] ?? 'bin'
+  const path = `${telefonoId}/${Date.now()}.${ext}`
+  const buffer = Buffer.from(media.data, 'base64')
+
+  const { error } = await getSupabaseBot()
+    .storage.from('reportes-media')
+    .upload(path, buffer, { contentType: media.mimeType, upsert: false })
+
+  if (error) {
+    console.error('Error subiendo media:', error.message)
+    return null
+  }
+
+  const { data } = getSupabaseBot().storage.from('reportes-media').getPublicUrl(path)
+  return data.publicUrl
+}
+
 async function crearReporte(
   telefonoId: string,
   campos: Record<string, string>,
   municipios: Municipio[],
   canal: 'telegram' | 'whatsapp',
   nombreReportante?: string,
-  telegramUsername?: string
+  telegramUsername?: string,
+  media?: { data: string; mimeType: string }
 ) {
   const geo = municipios.find(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
+
+  const mediaUrl = media ? await subirMedia(telefonoId, media) : null
 
   const { error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
@@ -116,6 +140,8 @@ async function crearReporte(
     estado: TIPOS_CRITICOS.has(campos.tipo) ? 'critico' : 'pendiente',
     personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
     tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
+    media_url: mediaUrl,
+    media_mime_type: mediaUrl ? media!.mimeType : null,
   })
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
@@ -235,7 +261,7 @@ export async function procesarMensaje({
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
     try {
-      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername)
+      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, media)
       await deleteSesion(telefonoId)
       await sendReply(
         '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 https://komared.com/mapa'

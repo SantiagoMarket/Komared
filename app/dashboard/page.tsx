@@ -136,7 +136,8 @@ export default function Dashboard() {
                   <th className="pb-3 pr-4">Municipio</th>
                   <th className="pb-3 pr-4">Estado</th>
                   <th className="pb-3 pr-4">Fecha</th>
-                  <th className="pb-3">Acciones</th>
+                  <th className="pb-3 pr-4">Acciones</th>
+                  <th className="pb-3">Detalle</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -173,6 +174,14 @@ export default function Dashboard() {
                             </button>
                           ))}
                         </div>
+                      </td>
+                      <td className="py-3">
+                        <a
+                          href={`/dashboard/${r.id}`}
+                          className="text-xs text-gray-500 hover:text-blue-400 transition-colors"
+                        >
+                          Ver →
+                        </a>
                       </td>
                     </tr>
                   )
