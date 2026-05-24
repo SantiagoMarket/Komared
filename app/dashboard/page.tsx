@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 
 type Reporte = {
   id: string
@@ -62,6 +62,11 @@ export default function Dashboard() {
   const [cargando, setCargando] = useState(true)
   const [actualizando, setActualizando] = useState<string | null>(null)
 
+  const supabase = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
+
   const cargarReportes = useCallback(async () => {
     const res = await fetch('/api/reportes')
     if (!res.ok) return
@@ -79,7 +84,7 @@ export default function Dashboard() {
       .subscribe()
 
     return () => { supabase.removeChannel(canal) }
-  }, [cargarReportes])
+  }, [cargarReportes, supabase])
 
   async function cambiarEstado(id: string, nuevoEstado: string) {
     setActualizando(id)
