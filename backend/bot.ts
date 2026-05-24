@@ -238,7 +238,7 @@ export async function procesarMensaje({
       await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername)
       await deleteSesion(telefonoId)
       await sendReply(
-        '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público.\n\nEscribe /nuevo para enviar otro reporte.'
+        '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 https://komared.com/mapa\n\nEscribe /nuevo para enviar otro reporte.'
       )
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
