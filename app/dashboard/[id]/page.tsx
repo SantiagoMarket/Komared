@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 
 type ReporteDetalle = {
   id: string
@@ -44,8 +44,8 @@ const LABEL_ESTADO: Record<string, string> = {
   solucionado: 'Solucionado',
 }
 
-export default function DetalleReporte({ params }: { params: { id: string } }) {
-  const { id } = params
+export default function DetalleReporte({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [reporte, setReporte] = useState<ReporteDetalle | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(false)
