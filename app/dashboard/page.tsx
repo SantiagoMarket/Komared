@@ -87,6 +87,10 @@ export default function Dashboard() {
   }, [cargarReportes, supabase])
 
   async function cambiarEstado(id: string, nuevoEstado: string) {
+    if (nuevoEstado === 'solucionado') {
+      const confirmado = window.confirm('¿Confirmas que este reporte fue resuelto?')
+      if (!confirmado) return
+    }
     setActualizando(id)
     await fetch(`/api/reportes/${id}`, {
       method: 'PATCH',

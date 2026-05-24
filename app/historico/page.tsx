@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '@/lib/supabase'
 
 type Reporte = {
   id: string
@@ -11,14 +10,19 @@ type Reporte = {
   departamento: string | null
   estado: string
   created_at: string
+  personas_afectadas: number | null
+  tiempo_situacion_dias: number | null
 }
 
 type FilaMunicipio = {
   municipio: string
   departamento: string
   total: number
+  tieneCritico: boolean
   porTipo: Record<string, number>
   reportes: Reporte[]
+  totalPersonas: number
+  promedioTiempo: number | null
 }
 
 const ETIQUETAS: Record<string, string> = {
@@ -29,6 +33,8 @@ const ETIQUETAS: Record<string, string> = {
   pae_no_entregado: 'PAE no entregado',
   pae_calidad_deficiente: 'PAE calidad',
   icbf_sin_entrega: 'ICBF sin entrega',
+  desnutricion_cronica: 'Desnutrición crónica',
+  deficit_alimentario: 'Déficit alimentario',
   otro: 'Otro',
 }
 
@@ -40,32 +46,41 @@ const COLORES_TIPO: Record<string, string> = {
   pae_no_entregado: 'bg-blue-500',
   pae_calidad_deficiente: 'bg-cyan-500',
   icbf_sin_entrega: 'bg-pink-500',
+  desnutricion_cronica: 'bg-red-700',
+  deficit_alimentario: 'bg-amber-600',
   otro: 'bg-gray-500',
 }
 
 const COLORES_ESTADO: Record<string, string> = {
-  aprobado: 'bg-green-900 text-green-300',
-  critico: 'bg-red-900 text-red-300',
-  resuelto: 'bg-gray-800 text-gray-400',
   pendiente: 'bg-yellow-900 text-yellow-300',
-  en_revision: 'bg-blue-900 text-blue-300',
+  critico:   'bg-red-900 text-red-300',
+  en_curso:  'bg-blue-900 text-blue-300',
+  solucionado: 'bg-gray-800 text-gray-400',
+}
+
+const LABEL_ESTADO: Record<string, string> = {
+  pendiente: 'Pendiente',
+  critico: 'Crítico',
+  en_curso: 'En curso',
+  solucionado: 'Solucionado',
 }
 
 const DEPARTAMENTOS_PRIORITARIOS = ['La Guajira', 'Chocó', 'Magdalena', 'Cesar']
+
+type Tab = 'reportes' | 'tiempo'
 
 export default function Historico() {
   const [reportes, setReportes] = useState<Reporte[]>([])
   const [cargando, setCargando] = useState(true)
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState<string | null>(null)
   const [filtroDepartamento, setFiltroDepartamento] = useState<string>('todos')
+  const [tab, setTab] = useState<Tab>('reportes')
 
   useEffect(() => {
     async function cargar() {
-      const { data } = await supabase
-        .from('reportes')
-        .select('id, tipo, nombre_lugar, municipio, departamento, estado, created_at')
-        .order('created_at', { ascending: false })
-      setReportes((data as Reporte[]) ?? [])
+      const res = await fetch('/api/reportes')
+      if (!res.ok) return
+      setReportes(await res.json())
       setCargando(false)
     }
     cargar()
@@ -76,32 +91,58 @@ export default function Historico() {
 
     for (const r of reportes) {
       if (!r.municipio) continue
-      const key = r.municipio
-      if (!mapa.has(key)) {
-        mapa.set(key, {
+      if (!mapa.has(r.municipio)) {
+        mapa.set(r.municipio, {
           municipio: r.municipio,
           departamento: r.departamento ?? '—',
           total: 0,
+          tieneCritico: false,
           porTipo: {},
           reportes: [],
+          totalPersonas: 0,
+          promedioTiempo: null,
         })
       }
-      const fila = mapa.get(key)!
+      const fila = mapa.get(r.municipio)!
       fila.total++
+      if (r.estado === 'critico') fila.tieneCritico = true
       fila.porTipo[r.tipo] = (fila.porTipo[r.tipo] ?? 0) + 1
       fila.reportes.push(r)
+      if (r.personas_afectadas) fila.totalPersonas += r.personas_afectadas
     }
 
-    let filas = Array.from(mapa.values()).sort((a, b) => b.total - a.total)
+    // Calcular promedio de tiempo por municipio
+    for (const fila of mapa.values()) {
+      const conTiempo = fila.reportes.filter((r) => r.tiempo_situacion_dias !== null)
+      if (conTiempo.length > 0) {
+        const suma = conTiempo.reduce((acc, r) => acc + (r.tiempo_situacion_dias ?? 0), 0)
+        fila.promedioTiempo = Math.round(suma / conTiempo.length)
+      }
+    }
+
+    let filas = Array.from(mapa.values())
 
     if (filtroDepartamento !== 'todos') {
       filas = filas.filter((f) => f.departamento === filtroDepartamento)
     }
 
+    if (tab === 'reportes') {
+      // Críticos primero, luego por total de reportes
+      filas.sort((a, b) => {
+        if (a.tieneCritico !== b.tieneCritico) return a.tieneCritico ? -1 : 1
+        return b.total - a.total
+      })
+    } else {
+      // Por tiempo promedio descendente — solo los que tienen datos
+      filas = filas.filter((f) => f.promedioTiempo !== null)
+      filas.sort((a, b) => (b.promedioTiempo ?? 0) - (a.promedioTiempo ?? 0))
+    }
+
     return filas
-  }, [reportes, filtroDepartamento])
+  }, [reportes, filtroDepartamento, tab])
 
   const maxTotal = ranking[0]?.total ?? 1
+  const maxTiempo = ranking[0]?.promedioTiempo ?? 1
 
   const departamentos = useMemo(() => {
     const deps = new Set(reportes.map((r) => r.departamento).filter(Boolean) as string[])
@@ -113,7 +154,9 @@ export default function Historico() {
     : null
 
   const totalGlobal = reportes.length
-  const municipiosAfectados = ranking.length
+  const municipiosAfectados = new Set(reportes.map((r) => r.municipio).filter(Boolean)).size
+  const totalPersonasGlobal = reportes.reduce((acc, r) => acc + (r.personas_afectadas ?? 0), 0)
+
   const depMasCritico = useMemo(() => {
     const conteo = new Map<string, number>()
     for (const r of reportes) {
@@ -126,7 +169,6 @@ export default function Historico() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
       <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
@@ -143,7 +185,7 @@ export default function Historico() {
         <div className="p-6 space-y-6">
 
           {/* Tarjetas resumen */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Total reportes</p>
               <p className="text-3xl font-bold text-white">{totalGlobal}</p>
@@ -153,9 +195,31 @@ export default function Historico() {
               <p className="text-3xl font-bold text-white">{municipiosAfectados}</p>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Personas afectadas</p>
+              <p className="text-3xl font-bold text-amber-400">
+                {totalPersonasGlobal > 0 ? totalPersonasGlobal.toLocaleString('es-CO') : '—'}
+              </p>
+            </div>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Departamento más crítico</p>
               <p className="text-2xl font-bold text-red-400">{depMasCritico}</p>
             </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
+            <button
+              onClick={() => { setTab('reportes'); setMunicipioSeleccionado(null) }}
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === 'reportes' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              Por reportes
+            </button>
+            <button
+              onClick={() => { setTab('tiempo'); setMunicipioSeleccionado(null) }}
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === 'tiempo' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              Por tiempo promedio
+            </button>
           </div>
 
           <div className="grid grid-cols-5 gap-6">
@@ -163,7 +227,7 @@ export default function Historico() {
             <div className="col-span-3 bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-sm uppercase tracking-wide text-gray-300">
-                  Ranking por municipio
+                  {tab === 'reportes' ? 'Ranking por municipio' : 'Ranking por tiempo en situación'}
                 </h2>
                 <select
                   value={filtroDepartamento}
@@ -181,48 +245,65 @@ export default function Historico() {
               </div>
 
               {ranking.length === 0 ? (
-                <p className="text-gray-600 text-sm py-8 text-center">Sin reportes para este filtro.</p>
+                <p className="text-gray-600 text-sm py-8 text-center">
+                  {tab === 'tiempo'
+                    ? 'Sin datos de tiempo reportados para este filtro.'
+                    : 'Sin reportes para este filtro.'}
+                </p>
               ) : (
                 <div className="space-y-2">
                   {ranking.map((fila, i) => {
                     const seleccionado = municipioSeleccionado === fila.municipio
+                    const valorBarra = tab === 'reportes'
+                      ? (fila.total / maxTotal) * 100
+                      : ((fila.promedioTiempo ?? 0) / maxTiempo) * 100
+
                     return (
                       <button
                         key={fila.municipio}
                         onClick={() => setMunicipioSeleccionado(seleccionado ? null : fila.municipio)}
-                        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors group ${seleccionado ? 'bg-gray-700' : 'hover:bg-gray-800'}`}
+                        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${seleccionado ? 'bg-gray-700' : 'hover:bg-gray-800'}`}
                       >
                         <div className="flex items-center gap-3 mb-1.5">
                           <span className="text-gray-500 text-xs w-5 text-right">{i + 1}</span>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
                             <span className="text-white text-sm font-medium truncate">{fila.municipio}</span>
-                            <span className="text-gray-500 text-xs ml-2">{fila.departamento}</span>
+                            <span className="text-gray-500 text-xs">{fila.departamento}</span>
+                            {fila.tieneCritico && tab === 'reportes' && (
+                              <span className="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400 font-medium">Crítico</span>
+                            )}
                           </div>
-                          <span className="text-white font-bold text-sm">{fila.total}</span>
+                          <span className="text-white font-bold text-sm shrink-0">
+                            {tab === 'reportes'
+                              ? `${fila.total} rep.`
+                              : `${fila.promedioTiempo} días`}
+                          </span>
                         </div>
-                        {/* Barra principal */}
                         <div className="flex items-center gap-2 pl-8">
                           <div className="flex-1 bg-gray-800 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full transition-all"
-                              style={{ width: `${(fila.total / maxTotal) * 100}%` }}
+                              className={`h-full rounded-full transition-all ${tab === 'tiempo' ? 'bg-amber-500' : fila.tieneCritico ? 'bg-red-500' : 'bg-blue-500'}`}
+                              style={{ width: `${valorBarra}%` }}
                             />
                           </div>
                         </div>
-                        {/* Desglose por tipo */}
-                        <div className="flex gap-1.5 pl-8 mt-1.5 flex-wrap">
-                          {Object.entries(fila.porTipo)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([tipo, n]) => (
-                              <span
-                                key={tipo}
-                                className="flex items-center gap-1 text-xs text-gray-400"
-                              >
-                                <span className={`w-1.5 h-1.5 rounded-full ${COLORES_TIPO[tipo] ?? 'bg-gray-500'}`} />
-                                {ETIQUETAS[tipo] ?? tipo} ({n})
-                              </span>
-                            ))}
-                        </div>
+                        {tab === 'reportes' && (
+                          <div className="flex gap-1.5 pl-8 mt-1.5 flex-wrap">
+                            {Object.entries(fila.porTipo)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([tipo, n]) => (
+                                <span key={tipo} className="flex items-center gap-1 text-xs text-gray-400">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${COLORES_TIPO[tipo] ?? 'bg-gray-500'}`} />
+                                  {ETIQUETAS[tipo] ?? tipo} ({n})
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                        {tab === 'tiempo' && fila.totalPersonas > 0 && (
+                          <p className="pl-8 mt-1 text-xs text-gray-500">
+                            {fila.totalPersonas.toLocaleString('es-CO')} personas afectadas
+                          </p>
+                        )}
                       </button>
                     )
                   })}
@@ -246,7 +327,25 @@ export default function Historico() {
                     <p className="text-gray-400 text-xs">{detalleActual.departamento} · {detalleActual.total} reportes</p>
                   </div>
 
-                  {/* Mini distribución por tipo */}
+                  {/* Métricas de impacto */}
+                  {(detalleActual.totalPersonas > 0 || detalleActual.promedioTiempo !== null) && (
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      {detalleActual.totalPersonas > 0 && (
+                        <div className="bg-gray-800 rounded-lg p-3">
+                          <p className="text-gray-500 text-xs mb-1">Personas afectadas</p>
+                          <p className="text-amber-400 font-bold text-lg">{detalleActual.totalPersonas.toLocaleString('es-CO')}</p>
+                        </div>
+                      )}
+                      {detalleActual.promedioTiempo !== null && (
+                        <div className="bg-gray-800 rounded-lg p-3">
+                          <p className="text-gray-500 text-xs mb-1">Tiempo promedio</p>
+                          <p className="text-red-400 font-bold text-lg">{detalleActual.promedioTiempo} días</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Distribución por tipo */}
                   <div className="space-y-1.5 mb-4">
                     {Object.entries(detalleActual.porTipo)
                       .sort(([, a], [, b]) => b - a)
@@ -265,6 +364,7 @@ export default function Historico() {
                       ))}
                   </div>
 
+                  {/* Lista de reportes */}
                   <div className="border-t border-gray-800 pt-3 flex-1 overflow-y-auto space-y-2">
                     {detalleActual.reportes.map((r) => (
                       <div key={r.id} className="bg-gray-800 rounded-lg p-3">
@@ -274,15 +374,23 @@ export default function Historico() {
                             <span className="text-white text-xs font-medium">{ETIQUETAS[r.tipo] ?? r.tipo}</span>
                           </div>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${COLORES_ESTADO[r.estado] ?? 'bg-gray-700 text-gray-400'}`}>
-                            {r.estado}
+                            {LABEL_ESTADO[r.estado] ?? r.estado}
                           </span>
                         </div>
                         {r.nombre_lugar && (
                           <p className="text-gray-400 text-xs truncate">{r.nombre_lugar}</p>
                         )}
-                        <p className="text-gray-600 text-xs mt-1">
-                          {new Date(r.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          <p className="text-gray-600 text-xs">
+                            {new Date(r.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                          {r.personas_afectadas && (
+                            <span className="text-amber-500 text-xs">{r.personas_afectadas} personas</span>
+                          )}
+                          {r.tiempo_situacion_dias && (
+                            <span className="text-red-400 text-xs">{r.tiempo_situacion_dias} días</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

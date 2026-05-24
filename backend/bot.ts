@@ -50,6 +50,8 @@ Debes recopilar exactamente estos campos:
 2. nombre_lugar: Nombre del comedor o institución educativa
 3. municipio_id: El municipio exacto de la siguiente lista que mejor corresponda a lo que diga el usuario. El usuario puede decir una ciudad, un barrio, una vereda, un lugar cercano o cualquier referencia. TÚ debes identificar cuál municipio de la lista corresponde. NUNCA le pidas al usuario que escriba el municipio — es tu trabajo identificarlo.
 4. evidencia: (opcional) descripción adicional, foto o audio
+5. personas_afectadas: (opcional) cuántas personas están afectadas. Pregunta: "¿Cuántas personas están afectadas aproximadamente?" Si el usuario no sabe o no quiere responder, omite el campo.
+6. tiempo_situacion_dias: (opcional) hace cuántos días lleva pasando esto. Pregunta: "¿Hace cuántos días lleva pasando esto?" Si el usuario responde en semanas, conviértelo a días tú mismo. Si no sabe, omite el campo.
 
 Lista de municipios válidos: ${listaMunicipios}
 
@@ -112,6 +114,8 @@ async function crearReporte(
     lng: geo?.lng ?? null,
     canal,
     estado: TIPOS_CRITICOS.has(campos.tipo) ? 'critico' : 'pendiente',
+    personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
+    tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
   })
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
@@ -203,6 +207,14 @@ export async function procesarMensaje({
                 evidencia: {
                   type: SchemaType.STRING,
                   description: 'Descripción adicional u observaciones (opcional)',
+                },
+                personas_afectadas: {
+                  type: SchemaType.NUMBER,
+                  description: 'Número aproximado de personas afectadas (opcional)',
+                },
+                tiempo_situacion_dias: {
+                  type: SchemaType.NUMBER,
+                  description: 'Hace cuántos días lleva pasando la situación (opcional, convertir semanas a días)',
                 },
               },
               required: ['tipo', 'nombre_lugar', 'municipio_id'],
