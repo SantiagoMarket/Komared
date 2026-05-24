@@ -1,43 +1,70 @@
 -- ─── Fase 0: Migración de estados y nuevos tipos ────────────────────────────
 --
--- Usa bloques DO para que cada operación sea idempotente:
--- si el valor de origen ya no existe (fue renombrado en un intento anterior)
--- se omite sin error.
+-- El enum estado_reporte puede tener ambos valores (viejo y nuevo) a la vez.
+-- Estrategia por caso:
+--   • Si viejo existe Y nuevo NO existe → RENAME (renombra el label del enum)
+--   • Si viejo existe Y nuevo YA existe → UPDATE filas (migra los datos)
+--   • Si viejo no existe               → skip (ya fue migrado)
 
 
--- ─── 1. Renombrar valores del enum estado_reporte ─────────────────────────────
+-- ─── 1. aprobado → pendiente ──────────────────────────────────────────────────
 
 DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
     WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'aprobado'
   ) THEN
-    ALTER TYPE estado_reporte RENAME VALUE 'aprobado' TO 'pendiente';
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+      WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'pendiente'
+    ) THEN
+      ALTER TYPE estado_reporte RENAME VALUE 'aprobado' TO 'pendiente';
+    ELSE
+      UPDATE reportes SET estado = 'pendiente' WHERE estado = 'aprobado';
+    END IF;
   END IF;
 END $$;
+
+
+-- ─── 2. en_revision → en_curso ───────────────────────────────────────────────
 
 DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
     WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'en_revision'
   ) THEN
-    ALTER TYPE estado_reporte RENAME VALUE 'en_revision' TO 'en_curso';
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+      WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'en_curso'
+    ) THEN
+      ALTER TYPE estado_reporte RENAME VALUE 'en_revision' TO 'en_curso';
+    ELSE
+      UPDATE reportes SET estado = 'en_curso' WHERE estado = 'en_revision';
+    END IF;
   END IF;
 END $$;
+
+
+-- ─── 3. resuelto → solucionado ───────────────────────────────────────────────
 
 DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
     WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'resuelto'
   ) THEN
-    ALTER TYPE estado_reporte RENAME VALUE 'resuelto' TO 'solucionado';
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid
+      WHERE t.typname = 'estado_reporte' AND e.enumlabel = 'solucionado'
+    ) THEN
+      ALTER TYPE estado_reporte RENAME VALUE 'resuelto' TO 'solucionado';
+    ELSE
+      UPDATE reportes SET estado = 'solucionado' WHERE estado = 'resuelto';
+    END IF;
   END IF;
 END $$;
 
 
--- ─── 2. Agregar nuevos tipos de problema ──────────────────────────────────────
---
--- IF NOT EXISTS garantiza idempotencia.
+-- ─── 4. Agregar nuevos tipos de problema ──────────────────────────────────────
 
 DO $$ BEGIN
   IF NOT EXISTS (
@@ -58,7 +85,7 @@ DO $$ BEGIN
 END $$;
 
 
--- ─── 3. Actualizar RLS: lectura pública solo pendiente + critico ──────────────
+-- ─── 5. Actualizar RLS: lectura pública solo pendiente + critico ──────────────
 
 DROP POLICY IF EXISTS "anon_select_reportes_publicos" ON reportes;
 
@@ -72,7 +99,7 @@ USING (
 );
 
 
--- ─── 4. Recrear view mapa_reportes_publico ────────────────────────────────────
+-- ─── 6. Recrear view mapa_reportes_publico ────────────────────────────────────
 
 DROP VIEW IF EXISTS mapa_reportes_publico;
 
