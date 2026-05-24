@@ -83,12 +83,12 @@ async function procesarWhatsApp(msg: WhatsAppMessage) {
   } catch (err) {
     const msg429 = err instanceof Error && err.message.includes('429')
     if (msg429) {
-      // Cuota de Gemini agotada — avisar al usuario, no enviar email de error
-      console.warn('[webhook/whatsapp] Gemini 429 - cuota agotada')
+      // Cuota de Gemini agotada — notificar al admin una sola vez (sin reintentos porque retornamos 200)
+      await notificarError('webhook/whatsapp Gemini 429 - cuota agotada', err)
       await enviarMensaje(telefonoId, '⏳ El asistente está temporalmente ocupado. Por favor intenta en unos minutos.')
     } else {
-      // Error inesperado — notificar al admin
       await notificarError('webhook/whatsapp procesarMensaje', err)
+      await enviarMensaje(telefonoId, '⏳ El asistente está temporalmente ocupado. Por favor intenta en unos minutos.')
     }
   }
 }
