@@ -80,11 +80,21 @@ async function getSesion(telefonoId: string) {
   return data
 }
 
-async function setSesion(telefonoId: string, historial: Content[]) {
+async function setSesion(
+  telefonoId: string,
+  historial: Content[],
+  mediaGuardada?: { url: string; mimeType: string }
+) {
+  const sesionActual = await getSesion(telefonoId)
+  const mediaExistente = sesionActual?.datos_temp?.media ?? null
+
   await getSupabaseBot().from('sesiones_bot').upsert(
     {
       telefono: telefonoId,
-      datos_temp: { historial },
+      datos_temp: {
+        historial,
+        media: mediaGuardada ?? mediaExistente,
+      },
       paso_actual: 'conversando',
       updated_at: new Date().toISOString(),
     },
@@ -124,13 +134,11 @@ async function crearReporte(
   canal: 'telegram' | 'whatsapp',
   nombreReportante?: string,
   telegramUsername?: string,
-  media?: { data: string; mimeType: string }
+  mediaGuardada?: { url: string; mimeType: string }
 ) {
   const geo = municipios.find(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
-
-  const mediaUrl = media ? await subirMedia(telefonoId, media) : null
 
   const { error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
@@ -146,8 +154,8 @@ async function crearReporte(
     estado: TIPOS_CRITICOS.has(campos.tipo) ? 'critico' : 'pendiente',
     personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
     tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
-    media_url: mediaUrl,
-    media_mime_type: mediaUrl ? media!.mimeType : null,
+    media_url: mediaGuardada?.url ?? null,
+    media_mime_type: mediaGuardada?.mimeType ?? null,
   })
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
@@ -189,6 +197,8 @@ export async function procesarMensaje({
     }
   }
   const historial: Content[] = sesion?.datos_temp?.historial ?? []
+  // Si el usuario ya envió media en un mensaje anterior, recuperarla de la sesión
+  let mediaGuardada: { url: string; mimeType: string } | null = sesion?.datos_temp?.media ?? null
 
   const municipios = await getMunicipios()
   const systemPrompt = buildSystemPrompt(municipios)
@@ -198,6 +208,9 @@ export async function procesarMensaje({
 
   if (media) {
     parts.push({ inlineData: { data: media.data, mimeType: media.mimeType } })
+    // Subir inmediatamente y persistir en sesión — así no se pierde entre mensajes
+    const url = await subirMedia(telefonoId, media)
+    if (url) mediaGuardada = { url, mimeType: media.mimeType }
   }
 
   const textoFinal = texto.trim()
@@ -267,7 +280,7 @@ export async function procesarMensaje({
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
     try {
-      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, media)
+      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, mediaGuardada ?? undefined)
       await deleteSesion(telefonoId)
       await sendReply(
         '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 https://komared.com/mapa'
@@ -287,7 +300,7 @@ export async function procesarMensaje({
     parts: response.candidates?.[0]?.content?.parts ?? [{ text: textoRespuesta }],
   }
   historial.push(modelContent)
-  await setSesion(telefonoId, historial)
+  await setSesion(telefonoId, historial, mediaGuardada ?? undefined)
 
   if (textoRespuesta) {
     await sendReply(textoRespuesta)
