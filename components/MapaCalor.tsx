@@ -18,6 +18,8 @@ const ETIQUETAS_TIPO: Record<string, string> = {
   pae_no_entregado: 'PAE no entregado',
   pae_calidad_deficiente: 'PAE calidad deficiente',
   icbf_sin_entrega: 'ICBF sin entrega',
+  desnutricion_cronica: 'Desnutrición crónica',
+  deficit_alimentario: 'Déficit alimentario',
   otro: 'Otro',
 }
 

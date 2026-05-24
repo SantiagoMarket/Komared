@@ -13,6 +13,8 @@ type Reporte = {
   created_at: string
 }
 
+type EstadoActivo = 'pendiente' | 'en_curso' | 'critico'
+
 const ETIQUETAS: Record<string, string> = {
   comedor_sin_alimentos: 'Sin alimentos',
   comedor_cerrado: 'Cerrado',
@@ -21,25 +23,50 @@ const ETIQUETAS: Record<string, string> = {
   pae_no_entregado: 'PAE no entregado',
   pae_calidad_deficiente: 'PAE calidad deficiente',
   icbf_sin_entrega: 'ICBF sin entrega',
+  desnutricion_cronica: 'Desnutrición crónica',
+  deficit_alimentario: 'Déficit alimentario',
   otro: 'Otro',
 }
 
-const COLORES_ESTADO: Record<string, string> = {
-  aprobado: 'bg-green-100 text-green-800',
-  critico: 'bg-red-100 text-red-800',
-  resuelto: 'bg-gray-100 text-gray-500',
+const BADGE: Record<string, string> = {
+  pendiente: 'bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700',
+  critico:   'bg-red-900/40   text-red-400   ring-1 ring-red-700',
+  en_curso:  'bg-blue-900/40  text-blue-400  ring-1 ring-blue-700',
+}
+
+const LABEL_ESTADO: Record<string, string> = {
+  pendiente: 'Pendiente',
+  critico:   'Crítico',
+  en_curso:  'En curso',
+}
+
+// Qué acciones se muestran según el estado actual del reporte
+const ACCIONES: Record<EstadoActivo, { label: string; estado: string; cls: string }[]> = {
+  pendiente: [
+    { label: 'En curso',    estado: 'en_curso',    cls: 'bg-blue-800 hover:bg-blue-700 text-blue-100' },
+    { label: 'Crítico',     estado: 'critico',     cls: 'bg-red-800 hover:bg-red-700 text-red-100' },
+    { label: 'Solucionado', estado: 'solucionado', cls: 'bg-green-800 hover:bg-green-700 text-green-100' },
+  ],
+  critico: [
+    { label: 'En curso',    estado: 'en_curso',    cls: 'bg-blue-800 hover:bg-blue-700 text-blue-100' },
+    { label: 'Solucionado', estado: 'solucionado', cls: 'bg-green-800 hover:bg-green-700 text-green-100' },
+  ],
+  en_curso: [
+    { label: 'Crítico',     estado: 'critico',     cls: 'bg-red-800 hover:bg-red-700 text-red-100' },
+    { label: 'Solucionado', estado: 'solucionado', cls: 'bg-green-800 hover:bg-green-700 text-green-100' },
+  ],
 }
 
 export default function Dashboard() {
   const [reportes, setReportes] = useState<Reporte[]>([])
   const [cargando, setCargando] = useState(true)
-  const [resolviendo, setResolviendo] = useState<string | null>(null)
+  const [actualizando, setActualizando] = useState<string | null>(null)
 
   const cargarReportes = useCallback(async () => {
     const { data } = await supabase
       .from('reportes')
       .select('id, tipo, nombre_lugar, municipio, departamento, estado, created_at')
-      .in('estado', ['aprobado', 'critico'])
+      .in('estado', ['pendiente', 'en_curso', 'critico'])
       .order('created_at', { ascending: false })
     setReportes((data as Reporte[]) ?? [])
     setCargando(false)
@@ -56,14 +83,14 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(canal) }
   }, [cargarReportes])
 
-  async function resolver(id: string) {
-    setResolviendo(id)
+  async function cambiarEstado(id: string, nuevoEstado: string) {
+    setActualizando(id)
     await fetch(`/api/reportes/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: 'resuelto' }),
+      body: JSON.stringify({ estado: nuevoEstado }),
     })
-    setResolviendo(null)
+    setActualizando(null)
     cargarReportes()
   }
 
@@ -100,40 +127,49 @@ export default function Dashboard() {
                   <th className="pb-3 pr-4">Tipo</th>
                   <th className="pb-3 pr-4">Lugar</th>
                   <th className="pb-3 pr-4">Municipio</th>
-
                   <th className="pb-3 pr-4">Estado</th>
                   <th className="pb-3 pr-4">Fecha</th>
-                  <th className="pb-3">Acción</th>
+                  <th className="pb-3">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {reportes.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-900 transition-colors">
-                    <td className="py-3 pr-4 text-white">{ETIQUETAS[r.tipo] ?? r.tipo}</td>
-                    <td className="py-3 pr-4 text-gray-300">{r.nombre_lugar ?? '—'}</td>
-                    <td className="py-3 pr-4 text-gray-300">
-                      {[r.municipio, r.departamento].filter(Boolean).join(', ') || '—'}
-                    </td>
-
-                    <td className="py-3 pr-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${COLORES_ESTADO[r.estado] ?? ''}`}>
-                        {r.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-gray-500 text-xs">
-                      {new Date(r.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="py-3">
-                      <button
-                        onClick={() => resolver(r.id)}
-                        disabled={resolviendo === r.id}
-                        className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs rounded-lg transition-colors"
-                      >
-                        {resolviendo === r.id ? 'Resolviendo...' : 'Marcar resuelto'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {reportes.map((r) => {
+                  const acciones = ACCIONES[r.estado as EstadoActivo] ?? []
+                  const ocupado = actualizando === r.id
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-900 transition-colors">
+                      <td className="py-3 pr-4 text-white">{ETIQUETAS[r.tipo] ?? r.tipo}</td>
+                      <td className="py-3 pr-4 text-gray-300">{r.nombre_lugar ?? '—'}</td>
+                      <td className="py-3 pr-4 text-gray-300">
+                        {[r.municipio, r.departamento].filter(Boolean).join(', ') || '—'}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${BADGE[r.estado] ?? ''}`}>
+                          {LABEL_ESTADO[r.estado] ?? r.estado}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-500 text-xs">
+                        {new Date(r.created_at).toLocaleDateString('es-CO', {
+                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex gap-1.5 flex-wrap">
+                          {acciones.map((a) => (
+                            <button
+                              key={a.estado}
+                              onClick={() => cambiarEstado(r.id, a.estado)}
+                              disabled={ocupado}
+                              className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors disabled:opacity-40 ${a.cls}`}
+                            >
+                              {ocupado ? '…' : a.label}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

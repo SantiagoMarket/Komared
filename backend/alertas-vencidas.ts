@@ -5,7 +5,7 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
-const ESTADOS_PENDIENTES = ['pendiente', 'en_revision'] as const
+const ESTADOS_PENDIENTES = ['pendiente', 'en_curso', 'critico'] as const
 const DIAS_LIMITE = 7
 const FROM_EMAIL = 'KomaRed Alertas <alertas@komared.com>'
 
