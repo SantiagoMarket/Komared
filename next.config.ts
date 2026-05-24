@@ -9,8 +9,9 @@ const csp = [
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  // data: y blob: para Leaflet; *.tile.openstreetmap.org para los tiles del mapa
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
+  // data: y blob: para Leaflet; *.tile.openstreetmap.org para tiles; Supabase Storage para evidencia multimedia
+  `img-src 'self' data: blob: https://*.tile.openstreetmap.org ${SUPABASE_URL}`,
+  `media-src 'self' ${SUPABASE_URL}`,
   // WebSocket (wss:) para Supabase Realtime
   `connect-src 'self' ${SUPABASE_URL} ${SUPABASE_WSS}`,
   "frame-ancestors 'none'",
