@@ -19,7 +19,7 @@ function LoginForm() {
     setCargando(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Correo o contraseña incorrectos.')
@@ -27,8 +27,8 @@ function LoginForm() {
       return
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const esCliente = user?.app_metadata?.role === 'cliente'
+    // Usar el user que viene directo del signIn — tiene app_metadata garantizado
+    const esCliente = data.user?.app_metadata?.role === 'cliente'
 
     const params = new URLSearchParams(window.location.search)
     const next = params.get('next')
