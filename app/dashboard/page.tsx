@@ -57,10 +57,140 @@ const ACCIONES: Record<EstadoActivo, { label: string; estado: string; cls: strin
   ],
 }
 
+type FormCliente = {
+  nombre: string
+  empresa: string
+  email: string
+  password: string
+  ciudad: string
+  municipio: string
+  departamento: string
+}
+
+const FORM_VACIO: FormCliente = {
+  nombre: '', empresa: '', email: '', password: '',
+  ciudad: '', municipio: '', departamento: '',
+}
+
+function ModalCliente({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState<FormCliente>(FORM_VACIO)
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [exito, setExito] = useState(false)
+
+  function campo(k: keyof FormCliente) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setEnviando(true)
+    setError(null)
+    const res = await fetch('/api/admin/clientes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    })
+    setEnviando(false)
+    if (res.status === 409) { setError('Ya existe un usuario con ese correo.'); return }
+    if (!res.ok) { setError('Error al crear el cliente. Intenta de nuevo.'); return }
+    setExito(true)
+  }
+
+  if (exito) {
+    return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+        <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm text-center space-y-4">
+          <p className="text-green-400 font-semibold">Cliente creado</p>
+          <p className="text-gray-400 text-sm">
+            Se creó la cuenta para <span className="text-white">{form.email}</span>.
+            Ya puede iniciar sesión en <span className="text-white">/login</span>.
+          </p>
+          <button onClick={onClose} className="w-full bg-white text-gray-900 font-semibold text-sm rounded-lg py-2.5">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-white font-semibold">Nuevo cliente</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-xl leading-none">×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Nombre</span>
+              <input value={form.nombre} onChange={campo('nombre')} required
+                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Empresa / Organización</span>
+              <input value={form.empresa} onChange={campo('empresa')} required
+                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+            </label>
+          </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-gray-400">Correo electrónico</span>
+            <input type="email" value={form.email} onChange={campo('email')} required
+              className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-gray-400">Contraseña temporal</span>
+            <input type="password" value={form.password} onChange={campo('password')} required minLength={8}
+              className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500"
+              placeholder="Mínimo 8 caracteres" />
+          </label>
+
+          <div className="grid grid-cols-3 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Ciudad</span>
+              <input value={form.ciudad} onChange={campo('ciudad')}
+                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Municipio</span>
+              <input value={form.municipio} onChange={campo('municipio')}
+                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Departamento</span>
+              <input value={form.departamento} onChange={campo('departamento')}
+                className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500" />
+            </label>
+          </div>
+
+          {error && <p className="text-red-400 text-xs">{error}</p>}
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-gray-700 text-gray-300 text-sm rounded-lg py-2.5 hover:bg-gray-800 transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" disabled={enviando}
+              className="flex-1 bg-white text-gray-900 font-semibold text-sm rounded-lg py-2.5 hover:bg-gray-100 disabled:opacity-50 transition-colors">
+              {enviando ? 'Creando...' : 'Crear cliente'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [reportes, setReportes] = useState<Reporte[]>([])
   const [cargando, setCargando] = useState(true)
   const [actualizando, setActualizando] = useState<string | null>(null)
+  const [modalCliente, setModalCliente] = useState(false)
 
   const supabase = useMemo(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,6 +233,8 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
+      {modalCliente && <ModalCliente onClose={() => setModalCliente(false)} />}
+
       <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
@@ -112,6 +244,12 @@ export default function Dashboard() {
           <a href="/historico" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
             Ver histórico →
           </a>
+          <button
+            onClick={() => setModalCliente(true)}
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            + Cliente
+          </button>
           <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
           <form action="/api/auth/logout" method="POST">
             <button type="submit" className="text-xs text-gray-500 hover:text-red-400 transition-colors">

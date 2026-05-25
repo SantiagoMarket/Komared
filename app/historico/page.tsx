@@ -84,6 +84,10 @@ export default function Historico() {
   useEffect(() => {
     async function cargar() {
       const res = await fetch('/api/reportes')
+      if (res.status === 401) {
+        window.location.href = '/login?next=/historico'
+        return
+      }
       if (!res.ok) return
       setReportes(await res.json())
       setCargando(false)

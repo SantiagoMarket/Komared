@@ -27,10 +27,19 @@ function LoginForm() {
       return
     }
 
+    const { data: { user } } = await supabase.auth.getUser()
+    const esCliente = user?.app_metadata?.role === 'cliente'
+
     const params = new URLSearchParams(window.location.search)
-    const next = params.get('next') ?? '/dashboard'
+    const next = params.get('next')
     // Solo permitir rutas relativas internas — bloquea open redirect a dominios externos
-    const destino = next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+    const nextSeguro = next && next.startsWith('/') && !next.startsWith('//') ? next : null
+
+    // Los clientes solo pueden ir a /historico, nunca a /dashboard
+    const destino = esCliente
+      ? '/historico'
+      : (nextSeguro ?? '/dashboard')
+
     window.location.href = destino
   }
 
@@ -89,7 +98,7 @@ export default function Login() {
             <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
             <span className="text-white font-bold text-xl">Koma<span style={{color:'#F4B534'}}>Red</span></span>
           </div>
-          <p className="text-gray-400 text-sm">Acceso para validadores</p>
+          <p className="text-gray-400 text-sm">Acceso restringido</p>
         </div>
 
         <Suspense fallback={<div className="bg-gray-900 border border-gray-800 rounded-xl p-6 h-48" />}>
