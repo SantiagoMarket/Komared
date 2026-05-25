@@ -1,3 +1,5 @@
+import { notificarError } from '@/backend/notificar-error'
+
 const GRAPH = 'https://graph.facebook.com/v21.0'
 
 function token() {
@@ -5,7 +7,7 @@ function token() {
 }
 
 export async function enviarMensaje(to: string, text: string) {
-  await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+  const res = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -18,6 +20,11 @@ export async function enviarMensaje(to: string, text: string) {
       text: { body: text },
     }),
   })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    await notificarError(`enviarMensaje → ${to} (HTTP ${res.status})`, new Error(JSON.stringify(body)))
+  }
 }
 
 export async function descargarMedia(
