@@ -1,14 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
-const RUTAS_PROTEGIDAS = ['/dashboard', '/historico']
-
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
-  const { pathname } = req.nextUrl
-
-  const protegida = RUTAS_PROTEGIDAS.some((r) => pathname.startsWith(r))
-  if (!protegida) return res
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,17 +21,39 @@ export async function proxy(req: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const esCliente = user?.app_metadata?.role === 'cliente'
+  const { pathname } = req.nextUrl
 
+  // Usuario no autenticado intentando acceder a ruta protegida
   if (!user) {
-    const loginUrl = req.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+    if (pathname.startsWith('/dashboard') || pathname === '/historico') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('next', pathname)
+      return NextResponse.redirect(url)
+    }
+    return res
+  }
+
+  // Cliente autenticado intentando acceder a rutas de validadores
+  if (esCliente && pathname.startsWith('/dashboard')) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/historico'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  // Usuario ya autenticado visitando /login → redirigir a su home
+  if (pathname === '/login') {
+    const url = req.nextUrl.clone()
+    url.pathname = esCliente ? '/historico' : '/dashboard'
+    url.search = ''
+    return NextResponse.redirect(url)
   }
 
   return res
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/historico/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/historico', '/login'],
 }
