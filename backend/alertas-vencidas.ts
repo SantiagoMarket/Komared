@@ -26,7 +26,7 @@ export async function procesarAlertasVencidas(): Promise<{ enviados: number; tot
     .select('id, tipo, municipio, estado, created_at')
     .in('estado', ESTADOS_PENDIENTES)
     .is('notificado_7d_at', null)
-    .lt('updated_at', fechaLimite)
+    .lt('created_at', fechaLimite)
 
   if (errorReportes) throw new Error(`Error consultando reportes: ${errorReportes.message}`)
   if (!reportesVencidos || reportesVencidos.length === 0) return { enviados: 0, total: 0 }
@@ -208,8 +208,8 @@ async function enviarEmail(para: string, nombre: string, reporte: Reporte) {
   })
 
   if (error) {
-    console.error(`[alertas] Error enviando a ${para}:`, error.message)
-  } else {
-    console.log(`[alertas] Email enviado → ${nombre} <${para}>`)
+    throw new Error(`Error enviando a ${para}: ${error.message}`)
   }
+
+  console.log(`[alertas] Email enviado → ${nombre} <${para}>`)
 }
