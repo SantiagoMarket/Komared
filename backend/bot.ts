@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType, type Content, type Part } from '@google/generative-ai'
 import { getSupabaseBot } from '@/backend/supabase-bot'
+import { notificarNuevoReporte } from '@/backend/notificar-nuevo-reporte'
 
 const TIPOS_VALIDOS = [
   'comedor_sin_alimentos',
@@ -119,6 +120,28 @@ async function deleteSesion(telefonoId: string) {
   await getSupabaseBot().from('sesiones_bot').delete().eq('telefono', telefonoId)
 }
 
+async function marcarCompletado(telefonoId: string, reporteId: string) {
+  await getSupabaseBot().from('sesiones_bot').upsert(
+    {
+      telefono: telefonoId,
+      datos_temp: { reporte_id: reporteId },
+      paso_actual: 'completado',
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'telefono' }
+  )
+}
+
+async function vincularMedia(telefono: string, reporteId: string) {
+  const cincoMinAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  await getSupabaseBot()
+    .from('reportes_media')
+    .update({ reporte_id: reporteId })
+    .eq('telefono', telefono)
+    .is('reporte_id', null)
+    .gte('created_at', cincoMinAtras)
+}
+
 async function subirMedia(
   telefonoId: string,
   media: { data: string; mimeType: string }
@@ -153,7 +176,7 @@ async function crearReporte(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
 
-  const { error } = await getSupabaseBot().from('reportes').insert({
+  const { data: reporteData, error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
     telegram_username: telegramUsername ?? null,
@@ -169,9 +192,21 @@ async function crearReporte(
     tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
     media_url: mediaGuardada?.url ?? null,
     media_mime_type: mediaGuardada?.mimeType ?? null,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
+
+  notificarNuevoReporte({
+    tipo: campos.tipo,
+    nombre_lugar: campos.nombre_lugar,
+    municipio: geo?.municipio ?? campos.municipio_id ?? null,
+    departamento: geo?.departamento ?? null,
+    personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
+    tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
+    canal,
+  }).catch((err) => console.error('[notificarNuevoReporte]', err))
+
+  return reporteData.id as string
 }
 
 export async function procesarMensaje({
@@ -203,10 +238,30 @@ export async function procesarMensaje({
 
   let sesion = await getSesion(telefonoId)
   if (sesion) {
-    const hace2h = Date.now() - 2 * 60 * 60 * 1000
-    if (new Date(sesion.updated_at).getTime() < hace2h) {
+    if (sesion.paso_actual === 'guardando') return
+    if (sesion.paso_actual === 'completado') {
+      const hace60s = Date.now() - 60 * 1000
+      if (new Date(sesion.updated_at).getTime() > hace60s) {
+        // Foto extra del álbum — vincularla directamente al reporte ya guardado
+        if (media) {
+          const url = await subirMedia(telefonoId, media)
+          const reporteId: string | undefined = sesion.datos_temp?.reporte_id
+          if (url && reporteId) {
+            await getSupabaseBot()
+              .from('reportes_media')
+              .insert({ reporte_id: reporteId, telefono: telefonoId, url, mime_type: media.mimeType })
+          }
+        }
+        return
+      }
       await deleteSesion(telefonoId)
       sesion = null
+    } else {
+      const hace2h = Date.now() - 2 * 60 * 60 * 1000
+      if (new Date(sesion.updated_at).getTime() < hace2h) {
+        await deleteSesion(telefonoId)
+        sesion = null
+      }
     }
   }
   const historial: Content[] = sesion?.datos_temp?.historial ?? []
@@ -221,9 +276,14 @@ export async function procesarMensaje({
 
   if (media) {
     parts.push({ inlineData: { data: media.data, mimeType: media.mimeType } })
-    // Subir inmediatamente y persistir en sesión — así no se pierde entre mensajes
     const url = await subirMedia(telefonoId, media)
-    if (url) mediaGuardada = { url, mimeType: media.mimeType }
+    if (url) {
+      mediaGuardada = { url, mimeType: media.mimeType }
+      // Registrar en reportes_media de inmediato; se vinculará al reporte cuando se guarde
+      await getSupabaseBot()
+        .from('reportes_media')
+        .insert({ telefono: telefonoId, url, mime_type: media.mimeType })
+    }
   }
 
   const textoFinal = texto.trim()
@@ -293,8 +353,20 @@ export async function procesarMensaje({
   if (functionCall && functionCall.name === 'registrar_reporte') {
     const campos = functionCall.args as Record<string, string>
     try {
-      await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, mediaGuardada ?? undefined)
-      await deleteSesion(telefonoId)
+      // Lock atómico: solo la primera invocación concurrente puede guardar
+      if (sesion !== null) {
+        const { data: locked } = await getSupabaseBot()
+          .from('sesiones_bot')
+          .update({ paso_actual: 'guardando', updated_at: new Date().toISOString() })
+          .eq('telefono', telefonoId)
+          .or('paso_actual.eq.conversando,paso_actual.is.null')
+          .select('id')
+        if (!locked || locked.length === 0) return
+      }
+
+      const reporteId = await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, mediaGuardada ?? undefined)
+      await vincularMedia(telefonoId, reporteId)
+      await marcarCompletado(telefonoId, reporteId)
       await sendReply(
         '✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 https://komared.com/mapa'
       )
