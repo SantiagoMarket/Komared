@@ -57,159 +57,11 @@ const ACCIONES: Record<EstadoActivo, { label: string; estado: string; cls: strin
   ],
 }
 
-type FormCliente = {
-  nombre: string
-  empresa: string
-  email: string
-  password: string
-  ciudad: string
-  municipio: string
-  departamento: string
-}
-
-const FORM_VACIO: FormCliente = {
-  nombre: '', empresa: '', email: '', password: '',
-  ciudad: '', municipio: '', departamento: '',
-}
-
-function InputField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-gray-600">{label}</span>
-      {children}
-    </label>
-  )
-}
-
-const inputCls = 'bg-white border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#587546]/30 focus:border-[#587546] transition-colors placeholder:text-gray-400'
-
-function ModalCliente({ onClose }: { onClose: () => void }) {
-  const [form, setForm]       = useState<FormCliente>(FORM_VACIO)
-  const [enviando, setEnviando] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
-  const [exito, setExito]     = useState(false)
-
-  function campo(k: keyof FormCliente) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }))
-  }
-
-  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setEnviando(true)
-    setError(null)
-    const res = await fetch('/api/admin/clientes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    setEnviando(false)
-    if (res.status === 409) { setError('Ya existe un usuario con ese correo.'); return }
-    if (!res.ok) { setError('Error al crear el cliente. Intenta de nuevo.'); return }
-    setExito(true)
-  }
-
-  if (exito) {
-    return (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-gray-900 font-semibold">Cliente creado</p>
-            <p className="text-gray-500 text-sm mt-1">
-              Se creó la cuenta para <span className="font-medium text-gray-800">{form.email}</span>.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-full bg-[#1C3828] text-white font-semibold text-sm rounded-xl py-2.5 hover:bg-[#2a4f3a] transition-colors"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-gray-900 font-semibold text-lg">Nuevo cliente</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors text-xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <InputField label="Nombre">
-              <input value={form.nombre} onChange={campo('nombre')} required className={inputCls} placeholder="Nombre completo" />
-            </InputField>
-            <InputField label="Empresa / Organización">
-              <input value={form.empresa} onChange={campo('empresa')} required className={inputCls} placeholder="Organización" />
-            </InputField>
-          </div>
-
-          <InputField label="Correo electrónico">
-            <input type="email" value={form.email} onChange={campo('email')} required className={inputCls} placeholder="correo@ejemplo.com" />
-          </InputField>
-
-          <InputField label="Contraseña temporal">
-            <input type="password" value={form.password} onChange={campo('password')} required minLength={8}
-              className={inputCls} placeholder="Mínimo 8 caracteres" />
-          </InputField>
-
-          <div className="grid grid-cols-3 gap-3">
-            <InputField label="Ciudad">
-              <input value={form.ciudad} onChange={campo('ciudad')} className={inputCls} />
-            </InputField>
-            <InputField label="Municipio">
-              <input value={form.municipio} onChange={campo('municipio')} className={inputCls} />
-            </InputField>
-            <InputField label="Departamento">
-              <input value={form.departamento} onChange={campo('departamento')} className={inputCls} />
-            </InputField>
-          </div>
-
-          {error && (
-            <p className="text-red-500 text-xs bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
-          )}
-
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 text-sm rounded-xl py-2.5 hover:bg-gray-50 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="flex-1 bg-[#1C3828] text-white font-semibold text-sm rounded-xl py-2.5 hover:bg-[#2a4f3a] disabled:opacity-50 transition-colors"
-            >
-              {enviando ? 'Creando...' : 'Crear cliente'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
 
 export default function Dashboard() {
   const [reportes, setReportes]       = useState<Reporte[]>([])
   const [cargando, setCargando]       = useState(true)
   const [actualizando, setActualizando] = useState<string | null>(null)
-  const [modalCliente, setModalCliente] = useState(false)
 
   const supabase = useMemo(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -250,7 +102,7 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {modalCliente && <ModalCliente onClose={() => setModalCliente(false)} />}
+
 
       <NavbarApp />
 
@@ -267,15 +119,6 @@ export default function Dashboard() {
               </span>
             )}
           </div>
-          <button
-            onClick={() => setModalCliente(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#1C3828] text-white text-sm font-medium rounded-xl hover:bg-[#2a4f3a] transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo cliente
-          </button>
         </div>
 
         {/* Tabla */}
