@@ -378,7 +378,21 @@ export async function procesarMensaje({
     return
   }
 
-  const textoRespuesta = response.text()
+  const blockReason = response.promptFeedback?.blockReason
+  if (blockReason || !response.candidates?.length) {
+    console.error(`[Gemini] Respuesta bloqueada. blockReason=${blockReason ?? 'sin candidatos'}`)
+    await sendReply('Lo siento, no pude procesar tu mensaje en este momento. Por favor intenta de nuevo 🙏')
+    return
+  }
+
+  let textoRespuesta: string
+  try {
+    textoRespuesta = response.text()
+  } catch (err) {
+    console.error('[Gemini] Error al leer texto de respuesta:', err)
+    await sendReply('Lo siento, no pude procesar tu mensaje en este momento. Por favor intenta de nuevo 🙏')
+    return
+  }
 
   const modelContent: Content = {
     role: 'model',
