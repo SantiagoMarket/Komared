@@ -1,0 +1,13 @@
+-- Baseline: schema completo al 2026-05-26
+-- Todas las tablas, enums, políticas RLS y funciones ya existen en producción.
+-- Este archivo es el punto de sincronización entre el CLI y la BD remota.
+-- Las migraciones anteriores se aplicaron directamente sin pasar por el CLI.
+--
+-- Tablas existentes:
+--   reportes, municipios, sesiones_bot, contactos_alerta,
+--   reportes_media, audit_log, clientes
+--
+-- A partir de aquí, todas las migraciones deben crearse con:
+--   supabase migration new <nombre>
+-- y aplicarse con:
+--   supabase db push --linked
