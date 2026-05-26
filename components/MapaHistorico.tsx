@@ -3,45 +3,10 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-
-type ReporteGeo = {
-  id: string
-  tipo: string
-  nombre_lugar: string | null
-  municipio: string | null
-  estado: string
-  lat: number | null
-  lng: number | null
-}
+import { ETIQUETAS_TIPO, COLOR_ESTADO_HEX, LABEL_ESTADO } from '@/lib/reportes-config'
+import type { ReporteGeo } from '@/types/reportes'
 
 const COLOMBIA_CENTER: L.LatLngTuple = [4.571, -74.297]
-
-const COLOR_ESTADO: Record<string, string> = {
-  pendiente:   '#f59e0b',
-  critico:     '#ef4444',
-  en_curso:    '#3b82f6',
-  solucionado: '#22c55e',
-}
-
-const ETIQUETAS_TIPO: Record<string, string> = {
-  comedor_sin_alimentos: 'Sin alimentos',
-  comedor_cerrado: 'Cerrado',
-  comedor_calidad_deficiente: 'Calidad deficiente',
-  comedor_contratista_ausente: 'Contratista ausente',
-  pae_no_entregado: 'PAE no entregado',
-  pae_calidad_deficiente: 'PAE calidad',
-  icbf_sin_entrega: 'ICBF sin entrega',
-  desnutricion_cronica: 'Desnutrición crónica',
-  deficit_alimentario: 'Déficit alimentario',
-  otro: 'Otro',
-}
-
-const LABEL_ESTADO: Record<string, string> = {
-  pendiente: 'Pendiente',
-  critico: 'Crítico',
-  en_curso: 'En curso',
-  solucionado: 'Solucionado',
-}
 
 export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -82,7 +47,7 @@ export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) 
     if (conCoordenadas.length === 0) return
 
     conCoordenadas.forEach((r) => {
-      const color = COLOR_ESTADO[r.estado] ?? '#6b7280'
+      const color = COLOR_ESTADO_HEX[r.estado] ?? '#6b7280'
       const marker = L.circleMarker([r.lat, r.lng], {
         radius: 7,
         fillColor: color,
@@ -115,7 +80,7 @@ export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) 
         <div className="flex items-center gap-3 ml-auto">
           {Object.entries(LABEL_ESTADO).map(([estado, label]) => (
             <span key={estado} className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR_ESTADO[estado] }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR_ESTADO_HEX[estado] }} />
               {label}
             </span>
           ))}

@@ -4,24 +4,12 @@ import { useEffect, useRef, useCallback } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase, ReporteMapbox } from '@/lib/supabase'
+import { ETIQUETAS_TIPO } from '@/lib/reportes-config'
 
 type HeatLatLngTuple = [number, number, number]
 
 const COLOMBIA_CENTER: L.LatLngTuple = [4.571, -74.297]
 const ZOOM_INICIAL = 6
-
-const ETIQUETAS_TIPO: Record<string, string> = {
-  comedor_sin_alimentos: 'Comedor sin alimentos',
-  comedor_cerrado: 'Comedor cerrado',
-  comedor_calidad_deficiente: 'Calidad deficiente',
-  comedor_contratista_ausente: 'Contratista ausente',
-  pae_no_entregado: 'PAE no entregado',
-  pae_calidad_deficiente: 'PAE calidad deficiente',
-  icbf_sin_entrega: 'ICBF sin entrega',
-  desnutricion_cronica: 'Desnutrición crónica',
-  deficit_alimentario: 'Déficit alimentario',
-  otro: 'Otro',
-}
 
 export default function MapaCalor() {
   const containerRef = useRef<HTMLDivElement>(null)
