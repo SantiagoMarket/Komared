@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import NavbarApp from '@/app/components/NavbarApp'
-import type { Reporte } from '@/types/reportes'
 import { useFiltros } from '@/hooks/useFiltros'
 import { useRanking, type Tab } from '@/hooks/useRanking'
+import { useHistorico } from '@/hooks/useHistorico'
 import { KpiGrid } from '@/components/historico/KpiGrid'
 import { SidebarFiltros } from '@/components/historico/SidebarFiltros'
 import { RankingMunicipios } from '@/components/historico/RankingMunicipios'
@@ -20,8 +20,7 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 export default function Historico() {
-  const [reportes, setReportes]                           = useState<Reporte[]>([])
-  const [cargando, setCargando]                           = useState(true)
+  const { reportes, cargando }                            = useHistorico()
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState<string | null>(null)
   const [tab, setTab]                                     = useState<Tab>('reportes')
 
@@ -40,17 +39,6 @@ export default function Historico() {
 
   const { ranking, maxTotal, maxTiempo, maxPersonas, depMasCritico } =
     useRanking(reportesFiltrados, filtroDepartamento, tab)
-
-  useEffect(() => {
-    async function cargar() {
-      const res = await fetch('/api/reportes')
-      if (res.status === 401) { window.location.href = '/login?next=/historico'; return }
-      if (!res.ok) return
-      setReportes(await res.json())
-      setCargando(false)
-    }
-    cargar()
-  }, [])
 
   const detalleActual       = ranking.find((f) => f.municipio === municipioSeleccionado) ?? null
   const totalGlobal         = reportesFiltrados.length

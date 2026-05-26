@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { verificarSesion } from '@/lib/auth-server'
 
 export const dynamic = 'force-dynamic'
 
 const CAMPOS_PERMITIDOS_PATCH = ['estado'] as const
-
-async function verificarSesion() {
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!await verificarSesion()) {

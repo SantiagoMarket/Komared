@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/backend/supabase-admin'
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { notificarError } from '@/backend/notificar-error'
 import { TIPOS_VALIDOS } from '@/lib/reportes-config'
+import { verificarSesion } from '@/lib/auth-server'
 
 const schemaReporteWeb = z.object({
   tipo: z.enum(TIPOS_VALIDOS),
@@ -14,12 +15,6 @@ const schemaReporteWeb = z.object({
 })
 
 export const dynamic = 'force-dynamic'
-
-async function verificarSesion() {
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
 
 export async function GET(req: NextRequest) {
   if (!await verificarSesion()) {

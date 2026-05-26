@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createSupabaseBrowser } from '@/lib/supabase'
+import { AuthShell } from '@/app/login/components/AuthShell'
 
 type Estado = 'esperando' | 'listo' | 'guardado' | 'error_token'
 
@@ -12,10 +13,7 @@ export default function NuevaContrasena() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
-  const supabaseRef = useRef(createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  ))
+  const supabaseRef = useRef(createSupabaseBrowser())
   const supabase = supabaseRef.current
 
   useEffect(() => {
@@ -68,17 +66,8 @@ export default function NuevaContrasena() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-3 mb-3">
-            <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
-            <span className="text-white font-bold text-xl">Koma<span style={{color:'#F4B534'}}>Red</span></span>
-          </div>
-          <p className="text-gray-400 text-sm">Nueva contraseña</p>
-        </div>
-
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <AuthShell subtitulo="Nueva contraseña">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           {estado === 'esperando' && (
             <p className="text-gray-400 text-sm text-center py-4">Verificando sesión...</p>
           )}
@@ -146,7 +135,6 @@ export default function NuevaContrasena() {
             </div>
           )}
         </div>
-      </div>
-    </main>
+    </AuthShell>
   )
 }
