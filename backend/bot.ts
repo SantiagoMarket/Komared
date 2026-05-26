@@ -18,15 +18,13 @@ export async function procesarMensaje({
   canal,
   media,
   nombreReportante,
-  telegramUsername,
 }: {
   telefonoId: string
   texto: string
   sendReply: (text: string) => Promise<void>
-  canal: 'telegram' | 'whatsapp'
+  canal: 'whatsapp'
   media?: { data: string; mimeType: string }
   nombreReportante?: string
-  telegramUsername?: string
 }) {
   if (texto === '/cancelar') {
     await deleteSesion(telefonoId)
@@ -165,7 +163,7 @@ export async function procesarMensaje({
         if (!locked || locked.length === 0) return
       }
 
-      const reporteId = await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, telegramUsername, mediaGuardada ?? undefined)
+      const reporteId = await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, mediaGuardada ?? undefined)
       await vincularMedia(telefonoId, reporteId)
       await marcarCompletado(telefonoId, reporteId)
       await sendReply(

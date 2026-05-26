@@ -23,9 +23,8 @@ export async function crearReporte(
   telefonoId: string,
   campos: Record<string, string>,
   municipios: Municipio[],
-  canal: 'telegram' | 'whatsapp',
+  canal: 'whatsapp',
   nombreReportante?: string,
-  telegramUsername?: string,
   mediaGuardada?: { url: string; mimeType: string }
 ): Promise<string> {
   const geo = municipios.find(
@@ -35,7 +34,6 @@ export async function crearReporte(
   const { data: reporteData, error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
-    telegram_username: telegramUsername ?? null,
     tipo: campos.tipo,
     nombre_lugar: campos.nombre_lugar,
     municipio: geo?.municipio ?? campos.municipio_id ?? null,
