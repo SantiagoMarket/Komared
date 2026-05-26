@@ -1,10 +1,5 @@
-import {
-  ETIQUETAS_TIPO,
-  LABEL_ESTADO,
-  BADGE_LIGHT,
-  ACCIONES_ESTADO,
-  type EstadoActivo,
-} from '@/lib/reportes-config'
+import { ETIQUETAS_TIPO, LABEL_ESTADO, ACCIONES_ESTADO, type EstadoActivo } from '@/lib/reportes-config'
+import { BADGE_LIGHT } from '@/lib/reportes-ui'
 import type { Reporte } from '@/types/reportes'
 
 type Props = {

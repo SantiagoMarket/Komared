@@ -1,4 +1,5 @@
-import { LABEL_ESTADO, BADGE_DARK } from '@/lib/reportes-config'
+import { LABEL_ESTADO } from '@/lib/reportes-config'
+import { BADGE_DARK } from '@/lib/reportes-ui'
 
 type Props = {
   estado: string

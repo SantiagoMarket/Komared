@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { ETIQUETAS_TIPO, COLOR_ESTADO_HEX, LABEL_ESTADO } from '@/lib/reportes-config'
+import { ETIQUETAS_TIPO, LABEL_ESTADO } from '@/lib/reportes-config'
+import { COLOR_ESTADO_HEX } from '@/lib/reportes-ui'
 import type { ReporteGeo } from '@/types/reportes'
 
 const COLOMBIA_CENTER: L.LatLngTuple = [4.571, -74.297]

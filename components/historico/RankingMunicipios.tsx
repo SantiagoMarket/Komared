@@ -1,5 +1,6 @@
 import { IconChevron } from '@/components/ui/Icons'
-import { ETIQUETAS_TIPO, CHIPS_TIPO, DEPARTAMENTOS_PRIORITARIOS } from '@/lib/reportes-config'
+import { ETIQUETAS_TIPO, DEPARTAMENTOS_PRIORITARIOS } from '@/lib/reportes-config'
+import { CHIPS_TIPO } from '@/lib/reportes-ui'
 import type { FilaMunicipio } from '@/types/reportes'
 import type { Tab } from '@/hooks/useRanking'
 

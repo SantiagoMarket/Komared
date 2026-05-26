@@ -1,4 +1,5 @@
-import { ETIQUETAS_TIPO, COLORES_DOT, COLORES_ESTADO_CSS, LABEL_ESTADO } from '@/lib/reportes-config'
+import { ETIQUETAS_TIPO, LABEL_ESTADO } from '@/lib/reportes-config'
+import { COLORES_DOT, COLORES_ESTADO_CSS } from '@/lib/reportes-ui'
 import type { FilaMunicipio } from '@/types/reportes'
 
 export function PanelDetalle({ detalle }: { detalle: FilaMunicipio | null }) {
