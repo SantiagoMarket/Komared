@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { getSupabaseBot } from '@/backend/supabase-bot'
+import { notificarError } from '@/backend/notificar-error'
 
 const FROM_EMAIL = 'KomaRed Reportes <alertas@komared.com>'
 
@@ -131,7 +132,7 @@ export async function notificarNuevoReporte(reporte: DatosReporte): Promise<void
       })
 
       if (error) {
-        console.error(`[notificarNuevoReporte] Error enviando a ${c.email}:`, error.message)
+        notificarError(`notificarNuevoReporte → ${c.email}`, new Error(error.message)).catch(() => {})
       }
     })
   )

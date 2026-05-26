@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType, type Content, type Part } from '@google/generative-ai'
 import { getSupabaseBot } from '@/backend/supabase-bot'
 import { notificarNuevoReporte } from '@/backend/notificar-nuevo-reporte'
+import { notificarError } from '@/backend/notificar-error'
 
 const TIPOS_VALIDOS = [
   'comedor_sin_alimentos',
@@ -66,12 +67,14 @@ Al interpretar lo que describe el usuario, NO menciones el nombre interno del ti
 
 Lista de municipios válidos: ${listaMunicipios}
 
-FLUJO OBLIGATORIO — un paso a la vez, en orden. NO puedes guardar el reporte sin completar todos los pasos:
+FLUJO OBLIGATORIO — un paso a la vez, en orden:
 1. Recopila tipo, nombre_lugar y municipio_id. Si el usuario ya dio suficiente información, no repitas preguntas.
 2. Pregunta cuántas personas están afectadas. Si no sabe, continúa.
 3. Pregunta hace cuánto tiempo lleva pasando. Si no sabe, continúa.
-4. Pregunta si tiene foto o video. Si no tiene o no responde, continúa sin evidencia.
-5. Solo después de recibir respuesta (o silencio) en los pasos 2, 3 y 4, guarda el reporte.
+4. Pregunta explícitamente si tiene foto o video como evidencia. ESPERA su respuesta antes de continuar.
+5. Solo después de haber preguntado y recibido respuesta (o silencio) en los pasos 2, 3 y 4, llama a la función registrar_reporte.
+
+⛔ REGLA ABSOLUTA: NUNCA llames a la función registrar_reporte sin haber preguntado primero por evidencia (foto o video) en el paso 4. Aunque tengas tipo, nombre_lugar y municipio_id completos, DEBES preguntarle al usuario sobre evidencia antes de guardar. Si omites este paso, el reporte queda incompleto.
 
 SALUDO INICIAL: Cuando el usuario escriba por primera vez, salúdalo con calidez, menciona que el reporte es anónimo y que sirve para que la ayuda llegue más rápido. Invítalo a contar libremente qué está pasando, sin limitarlo a categorías.
 
@@ -204,7 +207,7 @@ async function crearReporte(
     personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
     tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
     canal,
-  }).catch((err) => console.error('[notificarNuevoReporte]', err))
+  }).catch((err) => notificarError('crearReporte/notificarNuevoReporte', err))
 
   return reporteData.id as string
 }
