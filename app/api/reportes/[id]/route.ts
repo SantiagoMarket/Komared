@@ -22,7 +22,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   const { data, error } = await getSupabaseAdmin().from('reportes').select(CAMPOS).eq('id', id).single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
 
-  // Generar signed URL (1h) para bucket privado — solo llega a validadores autenticados
+  // Generar signed URL legacy (1h) — fallback para reportes sin entradas en reportes_media
   let media_signed_url: string | null = null
   if (data.media_url) {
     const { data: signed } = await getSupabaseAdmin()
@@ -31,7 +31,23 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     media_signed_url = signed?.signedUrl ?? null
   }
 
-  return NextResponse.json({ ...data, media_url: undefined, media_signed_url })
+  // Todos los archivos multimedia del reporte (incluyendo extras enviados después)
+  const { data: mediaRows } = await getSupabaseAdmin()
+    .from('reportes_media')
+    .select('url, mime_type')
+    .eq('reporte_id', id)
+    .order('created_at', { ascending: true })
+
+  const media_archivos = await Promise.all(
+    (mediaRows ?? []).map(async (m) => {
+      const { data: signed } = await getSupabaseAdmin()
+        .storage.from('reportes-media')
+        .createSignedUrl(m.url, 3600)
+      return { signed_url: signed?.signedUrl ?? null, mime_type: m.mime_type as string | null }
+    })
+  ).then((arr) => arr.filter((m): m is { signed_url: string; mime_type: string | null } => m.signed_url !== null))
+
+  return NextResponse.json({ ...data, media_url: undefined, media_signed_url, media_archivos })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

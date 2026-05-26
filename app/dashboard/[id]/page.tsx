@@ -2,6 +2,11 @@
 
 import { use, useEffect, useState } from 'react'
 
+type MediaArchivo = {
+  signed_url: string
+  mime_type: string | null
+}
+
 type ReporteDetalle = {
   id: string
   tipo: string
@@ -15,6 +20,7 @@ type ReporteDetalle = {
   canal: string | null
   media_signed_url: string | null
   media_mime_type: string | null
+  media_archivos: MediaArchivo[]
 }
 
 const ETIQUETAS: Record<string, string> = {
@@ -84,8 +90,12 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
     )
   }
 
-  const esImagen = reporte.media_mime_type?.startsWith('image/')
-  const esVideo  = reporte.media_mime_type?.startsWith('video/')
+  // Fallback para reportes viejos sin entradas en reportes_media
+  const archivos = reporte.media_archivos?.length > 0
+    ? reporte.media_archivos
+    : reporte.media_signed_url
+      ? [{ signed_url: reporte.media_signed_url, mime_type: reporte.media_mime_type }]
+      : []
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -144,35 +154,44 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
         )}
 
         {/* Media */}
-        {reporte.media_signed_url && (
+        {archivos.length > 0 && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <p className="text-gray-500 text-xs uppercase tracking-wide px-5 pt-4 pb-3">Evidencia multimedia</p>
-            {esImagen && (
-              <img
-                src={reporte.media_signed_url}
-                alt="Evidencia del reporte"
-                className="w-full object-contain max-h-[480px] bg-black"
-              />
-            )}
-            {esVideo && (
-              <video
-                src={reporte.media_signed_url}
-                controls
-                className="w-full max-h-[480px] bg-black"
-              />
-            )}
-            {!esImagen && !esVideo && (
-              <div className="px-5 pb-5">
-                <a
-                  href={reporte.media_signed_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 text-sm underline"
-                >
-                  Abrir archivo adjunto
-                </a>
-              </div>
-            )}
+            <p className="text-gray-500 text-xs uppercase tracking-wide px-5 pt-4 pb-3">
+              Evidencia multimedia
+              {archivos.length > 1 && <span className="ml-2 text-gray-600">({archivos.length})</span>}
+            </p>
+            <div className={archivos.length > 1 ? 'grid grid-cols-2 gap-px bg-gray-800' : ''}>
+              {archivos.map((archivo, i) => {
+                const esImg = archivo.mime_type?.startsWith('image/')
+                const esVid = archivo.mime_type?.startsWith('video/')
+                return (
+                  <div key={i} className="bg-black">
+                    {esImg && (
+                      <img
+                        src={archivo.signed_url}
+                        alt={`Evidencia ${i + 1}`}
+                        className="w-full object-contain max-h-[480px]"
+                      />
+                    )}
+                    {esVid && (
+                      <video src={archivo.signed_url} controls className="w-full max-h-[480px]" />
+                    )}
+                    {!esImg && !esVid && (
+                      <div className="px-5 py-4">
+                        <a
+                          href={archivo.signed_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 text-sm underline"
+                        >
+                          Abrir archivo {archivos.length > 1 ? i + 1 : ''}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 
