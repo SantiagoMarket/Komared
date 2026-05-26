@@ -1,4 +1,5 @@
 import { getSupabaseBot } from '@/backend/supabase-bot'
+import { getSupabaseAdmin } from '@/backend/supabase-admin'
 
 export async function subirMedia(
   telefonoId: string,
@@ -23,7 +24,7 @@ export async function subirMedia(
 
 export async function vincularMedia(telefono: string, reporteId: string) {
   const cincoMinAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-  await getSupabaseBot()
+  await getSupabaseAdmin()
     .from('reportes_media')
     .update({ reporte_id: reporteId })
     .eq('telefono', telefono)

@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType, type Content, type Part } from '@google/generative-ai'
 import { getSupabaseBot } from '@/backend/supabase-bot'
 import { TIPOS_VALIDOS } from '@/lib/reportes-config'
+import { getSupabaseAdmin } from '@/backend/supabase-admin'
 import { getSesion, setSesion, deleteSesion, marcarCompletado } from '@/backend/bot-session'
 import { subirMedia, vincularMedia } from '@/backend/bot-media'
 import { getMunicipios, crearReporte } from '@/backend/bot-report'
@@ -48,7 +49,7 @@ export async function procesarMensaje({
           const url = await subirMedia(telefonoId, media)
           const reporteId: string | undefined = sesion.datos_temp?.reporte_id
           if (url && reporteId) {
-            await getSupabaseBot()
+            await getSupabaseAdmin()
               .from('reportes_media')
               .insert({ reporte_id: reporteId, telefono: telefonoId, url, mime_type: media.mimeType })
           }
@@ -80,7 +81,7 @@ export async function procesarMensaje({
     const url = await subirMedia(telefonoId, media)
     if (url) {
       mediaGuardada = { url, mimeType: media.mimeType }
-      await getSupabaseBot()
+      await getSupabaseAdmin()
         .from('reportes_media')
         .insert({ telefono: telefonoId, url, mime_type: media.mimeType })
     }
