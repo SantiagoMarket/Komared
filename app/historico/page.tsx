@@ -6,10 +6,10 @@ import NavbarApp from '@/app/components/NavbarApp'
 import { useFiltros } from '@/hooks/useFiltros'
 import { useRanking, type Tab } from '@/hooks/useRanking'
 import { useHistorico } from '@/hooks/useHistorico'
-import { KpiGrid } from '@/components/historico/KpiGrid'
-import { SidebarFiltros } from '@/components/historico/SidebarFiltros'
-import { RankingMunicipios } from '@/components/historico/RankingMunicipios'
-import { PanelDetalle } from '@/components/historico/PanelDetalle'
+import { KpiGrid } from './components/KpiGrid'
+import { SidebarFiltros } from './components/SidebarFiltros'
+import { RankingMunicipios } from './components/RankingMunicipios'
+import { PanelDetalle } from './components/PanelDetalle'
 
 const MapaHistorico = dynamic(() => import('@/components/MapaHistorico'), { ssr: false })
 

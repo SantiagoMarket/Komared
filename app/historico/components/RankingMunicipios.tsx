@@ -1,6 +1,6 @@
 import { IconChevron } from '@/components/ui/Icons'
 import { DEPARTAMENTOS_PRIORITARIOS } from '@/lib/reportes-config'
-import { RankingRow } from '@/components/historico/RankingRow'
+import { RankingRow } from './RankingRow'
 import type { FilaMunicipio } from '@/types/reportes'
 import type { Tab } from '@/lib/ranking-aggregation'
 
