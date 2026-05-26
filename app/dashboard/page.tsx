@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import NavbarApp from '@/app/components/NavbarApp'
 
 type Reporte = {
   id: string
@@ -235,31 +236,21 @@ export default function Dashboard() {
     <main className="min-h-screen bg-gray-950 text-white">
       {modalCliente && <ModalCliente onClose={() => setModalCliente(false)} />}
 
-      <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
-          <h1 className="font-semibold text-sm tracking-wide uppercase">Dashboard Validadores</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="/historico" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
-            Ver histórico →
-          </a>
+      <NavbarApp />
+
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
+          </div>
           <button
             onClick={() => setModalCliente(true)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
           >
             + Cliente
           </button>
-          <span className="text-gray-400 text-sm">{reportes.length} reportes activos</span>
-          <form action="/api/auth/logout" method="POST">
-            <button type="submit" className="text-xs text-gray-500 hover:text-red-400 transition-colors">
-              Cerrar sesión
-            </button>
-          </form>
         </div>
-      </header>
-
-      <div className="p-6">
         {cargando ? (
           <p className="text-gray-500 text-center py-20">Cargando reportes...</p>
         ) : reportes.length === 0 ? (
