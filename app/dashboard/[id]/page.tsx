@@ -1,54 +1,11 @@
 'use client'
 
 import { use, useEffect, useState } from 'react'
-
-type MediaArchivo = {
-  signed_url: string
-  mime_type: string | null
-}
-
-type ReporteDetalle = {
-  id: string
-  tipo: string
-  nombre_lugar: string | null
-  municipio: string | null
-  departamento: string | null
-  estado: string
-  created_at: string
-  personas_afectadas: number | null
-  tiempo_situacion_dias: number | null
-  canal: string | null
-  media_signed_url: string | null
-  media_mime_type: string | null
-  media_archivos: MediaArchivo[]
-}
-
-const ETIQUETAS: Record<string, string> = {
-  comedor_sin_alimentos: 'Sin alimentos',
-  comedor_cerrado: 'Cerrado',
-  comedor_calidad_deficiente: 'Calidad deficiente',
-  comedor_contratista_ausente: 'Contratista ausente',
-  pae_no_entregado: 'PAE no entregado',
-  pae_calidad_deficiente: 'PAE calidad deficiente',
-  icbf_sin_entrega: 'ICBF sin entrega',
-  desnutricion_cronica: 'Desnutrición crónica',
-  deficit_alimentario: 'Déficit alimentario',
-  otro: 'Otro',
-}
-
-const BADGE: Record<string, string> = {
-  pendiente:   'bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700',
-  critico:     'bg-red-900/40 text-red-400 ring-1 ring-red-700',
-  en_curso:    'bg-blue-900/40 text-blue-400 ring-1 ring-blue-700',
-  solucionado: 'bg-green-900/40 text-green-400 ring-1 ring-green-700',
-}
-
-const LABEL_ESTADO: Record<string, string> = {
-  pendiente:   'Pendiente',
-  critico:     'Crítico',
-  en_curso:    'En curso',
-  solucionado: 'Solucionado',
-}
+import type { ReporteDetalle, MediaArchivo } from '@/types/reportes'
+import { DetalleHeader } from './components/DetalleHeader'
+import { DetalleInfo } from './components/DetalleInfo'
+import { DetalleMetricas } from './components/DetalleMetricas'
+import { MediaGallery } from './components/MediaGallery'
 
 export default function DetalleReporte({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -79,10 +36,7 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
       <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">Reporte no encontrado.</p>
-          <button
-            onClick={() => window.history.back()}
-            className="text-xs text-gray-500 hover:text-gray-300"
-          >
+          <button onClick={() => window.history.back()} className="text-xs text-gray-500 hover:text-gray-300">
             ← Volver
           </button>
         </div>
@@ -91,7 +45,7 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
   }
 
   // Fallback para reportes viejos sin entradas en reportes_media
-  const archivos = reporte.media_archivos?.length > 0
+  const archivos: MediaArchivo[] = reporte.media_archivos?.length > 0
     ? reporte.media_archivos
     : reporte.media_signed_url
       ? [{ signed_url: reporte.media_signed_url, mime_type: reporte.media_mime_type }]
@@ -99,102 +53,21 @@ export default function DetalleReporte({ params }: { params: Promise<{ id: strin
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
-        <button
-          onClick={() => window.history.back()}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          ← Volver al dashboard
-        </button>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${BADGE[reporte.estado] ?? ''}`}>
-          {LABEL_ESTADO[reporte.estado] ?? reporte.estado}
-        </span>
-      </header>
-
+      <DetalleHeader estado={reporte.estado} />
       <div className="max-w-2xl mx-auto p-6 space-y-6">
-
-        {/* Cabecera del reporte */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
-            {ETIQUETAS[reporte.tipo] ?? reporte.tipo}
-          </p>
-          <h1 className="text-xl font-bold text-white mb-1">
-            {reporte.nombre_lugar ?? '—'}
-          </h1>
-          <p className="text-gray-400 text-sm">
-            {[reporte.municipio, reporte.departamento].filter(Boolean).join(', ') || '—'}
-          </p>
-          <p className="text-gray-600 text-xs mt-2">
-            {new Date(reporte.created_at).toLocaleDateString('es-CO', {
-              day: '2-digit', month: 'long', year: 'numeric',
-              hour: '2-digit', minute: '2-digit',
-            })}
-            {reporte.canal && ` · vía ${reporte.canal}`}
-          </p>
-        </div>
-
-        {/* Métricas */}
-        {(reporte.personas_afectadas || reporte.tiempo_situacion_dias) && (
-          <div className="grid grid-cols-2 gap-4">
-            {reporte.personas_afectadas && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Personas afectadas</p>
-                <p className="text-2xl font-bold text-amber-400">
-                  {reporte.personas_afectadas.toLocaleString('es-CO')}
-                </p>
-              </div>
-            )}
-            {reporte.tiempo_situacion_dias && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Tiempo en situación</p>
-                <p className="text-2xl font-bold text-red-400">{reporte.tiempo_situacion_dias} días</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Media */}
-        {archivos.length > 0 && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <p className="text-gray-500 text-xs uppercase tracking-wide px-5 pt-4 pb-3">
-              Evidencia multimedia
-              {archivos.length > 1 && <span className="ml-2 text-gray-600">({archivos.length})</span>}
-            </p>
-            <div className={archivos.length > 1 ? 'grid grid-cols-2 gap-px bg-gray-800' : ''}>
-              {archivos.map((archivo, i) => {
-                const esImg = archivo.mime_type?.startsWith('image/')
-                const esVid = archivo.mime_type?.startsWith('video/')
-                return (
-                  <div key={i} className="bg-black">
-                    {esImg && (
-                      <img
-                        src={archivo.signed_url}
-                        alt={`Evidencia ${i + 1}`}
-                        className="w-full object-contain max-h-[480px]"
-                      />
-                    )}
-                    {esVid && (
-                      <video src={archivo.signed_url} controls className="w-full max-h-[480px]" />
-                    )}
-                    {!esImg && !esVid && (
-                      <div className="px-5 py-4">
-                        <a
-                          href={archivo.signed_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 text-sm underline"
-                        >
-                          Abrir archivo {archivos.length > 1 ? i + 1 : ''}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
+        <DetalleInfo
+          tipo={reporte.tipo}
+          nombre_lugar={reporte.nombre_lugar}
+          municipio={reporte.municipio}
+          departamento={reporte.departamento}
+          created_at={reporte.created_at}
+          canal={reporte.canal}
+        />
+        <DetalleMetricas
+          personasAfectadas={reporte.personas_afectadas}
+          tiempoSituacionDias={reporte.tiempo_situacion_dias}
+        />
+        <MediaGallery archivos={archivos} />
       </div>
     </main>
   )

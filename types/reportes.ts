@@ -1,3 +1,5 @@
+export type { EstadoActivo } from '@/lib/reportes-config'
+
 export type Reporte = {
   id: string
   tipo: string
@@ -10,6 +12,18 @@ export type Reporte = {
   tiempo_situacion_dias: number | null
   lat: number | null
   lng: number | null
+  canal: string | null
+}
+
+export type MediaArchivo = {
+  signed_url: string
+  mime_type: string | null
+}
+
+export type ReporteDetalle = Reporte & {
+  media_signed_url: string | null
+  media_mime_type: string | null
+  media_archivos: MediaArchivo[]
 }
 
 /** Subconjunto de Reporte necesario para renderizar marcadores en el mapa */

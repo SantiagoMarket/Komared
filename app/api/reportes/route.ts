@@ -3,19 +3,7 @@ import { z } from 'zod'
 import { getSupabaseAdmin } from '@/backend/supabase-admin'
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { notificarError } from '@/backend/notificar-error'
-
-const TIPOS_VALIDOS = [
-  'comedor_sin_alimentos',
-  'comedor_cerrado',
-  'comedor_calidad_deficiente',
-  'comedor_contratista_ausente',
-  'pae_no_entregado',
-  'pae_calidad_deficiente',
-  'icbf_sin_entrega',
-  'desnutricion_cronica',
-  'deficit_alimentario',
-  'otro',
-] as const
+import { TIPOS_VALIDOS } from '@/lib/reportes-config'
 
 const schemaReporteWeb = z.object({
   tipo: z.enum(TIPOS_VALIDOS),
