@@ -108,20 +108,20 @@ export default function MapaHistorico({ reportes }: { reportes: ReporteGeo[] }) 
   }, [reportes])
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Leyenda */}
-      <div className="flex items-center gap-4 px-4 py-2.5 border-b border-gray-800">
-        <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Mapa</span>
+      <div className="flex items-center gap-4 px-4 py-2.5 border-b border-gray-100">
+        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Mapa</span>
         <div className="flex items-center gap-3 ml-auto">
           {Object.entries(LABEL_ESTADO).map(([estado, label]) => (
-            <span key={estado} className="flex items-center gap-1.5 text-xs text-gray-400">
+            <span key={estado} className="flex items-center gap-1.5 text-xs text-gray-500">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR_ESTADO[estado] }} />
               {label}
             </span>
           ))}
         </div>
       </div>
-      <div ref={containerRef} className="w-full h-64" />
+      <div ref={containerRef} className="flex-1 w-full min-h-0" />
     </div>
   )
 }

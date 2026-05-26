@@ -359,7 +359,7 @@ export default function Historico() {
 
           {/* Mapa + Filtros */}
           <div className="grid grid-cols-5 gap-6">
-            <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-96">
               <MapaHistorico
                 reportes={reportesFiltrados.filter((r) =>
                   filtroDepartamento === 'todos' || r.departamento === filtroDepartamento
