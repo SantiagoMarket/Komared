@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { emailWrapper, emailHeader, emailColorBar, emailFooterDark } from '@/backend/email-layout'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'sant4cubillos@outlook.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL!
 const FROM_EMAIL = 'KomaRed Errores <alertas@komared.com>'
 
 export async function notificarError(origen: string, err: unknown) {
