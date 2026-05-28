@@ -10,7 +10,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         <a href="#" className="flex items-center gap-2.5">
-          <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
+          <img src="/logo_komared.png" alt="KomaRed" className="h-8 w-auto" />
           <span className="font-bold text-xl text-[#1B1818]">
             Koma<span className="text-[#587546]">Red</span>
           </span>

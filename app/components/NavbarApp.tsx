@@ -35,7 +35,7 @@ export default function NavbarApp() {
           href={esAdmin === false ? '/historico' : '/dashboard'}
           className="flex items-center gap-2.5 shrink-0"
         >
-          <img src="/logo-komared.svg" alt="KomaRed" className="h-7 w-auto" />
+          <img src="/logo_komared.png" alt="KomaRed" className="h-7 w-auto" />
           <span className="font-bold text-lg text-[#1B1818]">
             Koma<span className="text-[#587546]">Red</span>
           </span>

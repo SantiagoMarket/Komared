@@ -89,7 +89,7 @@ export default function KomaBotChat() {
       {/* Header */}
       <div className="bg-[#1C3828] px-4 py-3 flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-[#F4B534] flex items-center justify-center shrink-0">
-          <img src="/logo-komared.svg" alt="" className="h-4 w-auto brightness-0" />
+          <img src="/logo_komared.png" alt="" className="h-4 w-auto brightness-0" />
         </div>
         <div>
           <p className="text-white text-sm font-bold">KomaBot</p>

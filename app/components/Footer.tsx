@@ -22,7 +22,7 @@ export default function Footer() {
           {/* Marca */}
           <div className="flex flex-col gap-4">
             <a href="#" className="flex items-center gap-2.5">
-              <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
+              <img src="/logo_komared.png" alt="KomaRed" className="h-8 w-auto" />
               <span className="font-bold text-xl text-white">
                 Koma<span className="text-[#F4B534]">Red</span>
               </span>

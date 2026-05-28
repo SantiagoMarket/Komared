@@ -21,7 +21,7 @@ export default function PoliticaPrivacidad() {
           </Link>
 
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo-komared.svg" alt="KomaRed" className="h-8 w-auto" />
+            <img src="/logo_komared.png" alt="KomaRed" className="h-8 w-auto" />
             <span className="font-bold text-xl text-white">
               Koma<span className="text-[#F4B534]">Red</span>
             </span>

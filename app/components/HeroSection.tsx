@@ -79,7 +79,7 @@ export default function HeroSection({ stats }: { stats: HeroStats }) {
             {/* Header del panel */}
             <div className="bg-[#1C3828] px-5 py-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <img src="/logo-komared.svg" alt="" className="h-5 w-auto brightness-0 invert opacity-90" />
+                <img src="/logo_komared.png" alt="" className="h-5 w-auto brightness-0 invert opacity-90" />
                 <span className="text-white text-xs font-bold tracking-widest uppercase">KomaRed · Panel de Alertas</span>
               </div>
               <div className="flex gap-1.5">
