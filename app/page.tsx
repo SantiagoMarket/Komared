@@ -21,27 +21,29 @@ async function fetchStats() {
     const [
       { count: totalAlertas },
       { data: municipiosData },
-      { count: solucionados },
-      { count: verificados },
+      { count: reportesCriticos },
+      { data: personasData },
     ] = await Promise.all([
       supabase.from('reportes').select('*', { count: 'exact', head: true }),
       supabase.from('reportes').select('municipio'),
-      supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'solucionado'),
-      supabase.from('reportes').select('*', { count: 'exact', head: true }).neq('estado', 'pendiente'),
+      supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'critico'),
+      supabase.from('reportes').select('personas_afectadas'),
     ])
 
     const municipiosActivos = new Set((municipiosData ?? []).map((r: { municipio: string }) => r.municipio)).size
-    const tasaResolucion = totalAlertas ? Math.round(((solucionados ?? 0) / totalAlertas) * 100) : 0
-    const tasaVerificacion = totalAlertas ? Math.round(((verificados ?? 0) / totalAlertas) * 100) : 0
+    const personasAfectadas = (personasData ?? []).reduce(
+      (acc: number, r: { personas_afectadas: number | null }) => acc + (r.personas_afectadas ?? 0),
+      0
+    )
 
     return {
       totalAlertas: totalAlertas ?? 0,
       municipiosActivos,
-      tasaResolucion,
-      tasaVerificacion,
+      reportesCriticos: reportesCriticos ?? 0,
+      personasAfectadas,
     }
   } catch {
-    return { totalAlertas: 0, municipiosActivos: 0, tasaResolucion: 0, tasaVerificacion: 0 }
+    return { totalAlertas: 0, municipiosActivos: 0, reportesCriticos: 0, personasAfectadas: 0 }
   }
 }
 

@@ -10,7 +10,8 @@ const MapaPreview = dynamic(() => import('@/components/MapaPreview'), {
 interface Stats {
   totalAlertas: number
   municipiosActivos: number
-  tasaResolucion: number
+  reportesCriticos: number
+  personasAfectadas: number
 }
 
 export default function MapaSection({ stats }: { stats: Stats }) {

@@ -1,8 +1,8 @@
 interface HeroStats {
   totalAlertas: number
   municipiosActivos: number
-  tasaResolucion: number
-  tasaVerificacion: number
+  reportesCriticos: number
+  personasAfectadas: number
 }
 
 export default function HeroSection({ stats }: { stats: HeroStats }) {
@@ -67,7 +67,7 @@ export default function HeroSection({ stats }: { stats: HeroStats }) {
               ))}
             </div>
             <p className="text-sm text-gray-500">
-              <span className="font-bold text-[#1B1818]">+{stats.totalAlertas} reportes comunitarios</span>{' '}
+              <span className="font-bold text-[#1B1818]">+{stats.totalAlertas.toLocaleString('es-CO')} reportes comunitarios</span>{' '}
               en toda Colombia
             </p>
           </div>
@@ -121,10 +121,10 @@ export default function HeroSection({ stats }: { stats: HeroStats }) {
             {/* Stats del panel */}
             <div className="grid grid-cols-4 border-t border-gray-100">
               {[
-                { value: String(stats.totalAlertas), label: 'Reportes' },
+                { value: stats.totalAlertas.toLocaleString('es-CO'), label: 'Reportes' },
                 { value: String(stats.municipiosActivos), label: 'Municipios' },
-                { value: `${stats.tasaVerificacion}%`, label: 'Verificados' },
-                { value: `${stats.tasaResolucion}%`, label: 'Resueltos' },
+                { value: stats.personasAfectadas.toLocaleString('es-CO'), label: 'Afectados' },
+                { value: String(stats.reportesCriticos), label: 'Críticos' },
               ].map((s) => (
                 <div key={s.label} className="py-4 text-center border-r border-gray-100 last:border-r-0">
                   <p className="text-lg font-bold text-[#1C3828]">{s.value}</p>
