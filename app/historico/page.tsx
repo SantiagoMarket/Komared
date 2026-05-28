@@ -11,7 +11,11 @@ import { SidebarFiltros } from './components/SidebarFiltros'
 import { RankingMunicipios } from './components/RankingMunicipios'
 import { PanelDetalle } from './components/PanelDetalle'
 
-const MapaHistorico = dynamic(() => import('@/components/MapaHistorico'), { ssr: false })
+const MapaHistorico    = dynamic(() => import('@/components/MapaHistorico'), { ssr: false })
+const BotonDescargaPDF = dynamic(
+  () => import('./components/BotonDescargaPDF').then((m) => ({ default: m.BotonDescargaPDF })),
+  { ssr: false }
+)
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'reportes', label: 'Por reportes' },
@@ -60,9 +64,25 @@ export default function Historico() {
       ) : (
         <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
 
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reportes Históricos</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Datos agregados de todos los reportes ciudadanos</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Reportes Históricos</h1>
+              <p className="text-sm text-gray-500 mt-0.5">Datos agregados de todos los reportes ciudadanos</p>
+            </div>
+            <BotonDescargaPDF
+              totalGlobal={totalGlobal}
+              municipiosAfectados={municipiosAfectados}
+              totalPersonasGlobal={totalPersonasGlobal}
+              depMasCritico={depMasCritico}
+              ranking={ranking}
+              reportesFiltrados={reportesFiltrados}
+              filtroFechaDesde={filtroFechaDesde}
+              filtroFechaHasta={filtroFechaHasta}
+              filtroDepartamento={filtroDepartamento}
+              filtroMunicipio={filtroMunicipio}
+              filtroEstado={filtroEstado}
+              filtrosActivos={filtrosActivos}
+            />
           </div>
 
           <KpiGrid
