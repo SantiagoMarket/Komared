@@ -25,17 +25,31 @@ export async function GET(req: NextRequest) {
   const estado = searchParams.get('estado')
   const municipio = searchParams.get('municipio')
 
+  const page  = Math.max(1, parseInt(searchParams.get('page')  ?? '1'))
+  const limit = Math.min(50, parseInt(searchParams.get('limit') ?? '20'))
+  const from  = (page - 1) * limit
+  const to    = from + limit - 1
+
   const CAMPOS_PUBLICOS = 'id, tipo, nombre_lugar, municipio, departamento, estado, created_at, lat, lng, personas_afectadas, tiempo_situacion_dias, media_url, media_mime_type, canal'
-  let query = getSupabaseAdmin().from('reportes').select(CAMPOS_PUBLICOS).order('created_at', { ascending: false })
+  let query = getSupabaseAdmin()
+    .from('reportes')
+    .select(CAMPOS_PUBLICOS, { count: 'exact' })
+    .neq('estado', 'solucionado')
+    .order('created_at', { ascending: false })
   if (estado) query = query.eq('estado', estado)
   if (municipio) query = query.eq('municipio', municipio)
 
-  const { data, error } = await query
+  const { data, error, count } = await query.range(from, to)
   if (error) {
     await notificarError('api/reportes GET', error)
     return NextResponse.json({ error: 'Error al obtener los reportes' }, { status: 500 })
   }
-  return NextResponse.json(data)
+  return NextResponse.json({
+    data: data ?? [],
+    total: count ?? 0,
+    page,
+    totalPaginas: Math.ceil((count ?? 0) / limit),
+  })
 }
 
 export async function POST(req: NextRequest) {

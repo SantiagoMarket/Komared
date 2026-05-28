@@ -2,15 +2,19 @@ import type { Reporte } from '@/types/reportes'
 import { LoadingState } from './LoadingState'
 import { EmptyState } from './EmptyState'
 import { ReporteRow } from './ReporteRow'
+import { Paginacion } from './Paginacion'
 
 type Props = {
   reportes: Reporte[]
   cargando: boolean
   actualizando: string | null
+  pagina: number
+  totalPaginas: number
   onCambiarEstado: (id: string, estado: string) => void
+  onCambiarPagina: (n: number) => void
 }
 
-export function ReportesTable({ reportes, cargando, actualizando, onCambiarEstado }: Props) {
+export function ReportesTable({ reportes, cargando, actualizando, pagina, totalPaginas, onCambiarEstado, onCambiarPagina }: Props) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {cargando ? (
@@ -44,6 +48,7 @@ export function ReportesTable({ reportes, cargando, actualizando, onCambiarEstad
           </table>
         </div>
       )}
+      <Paginacion pagina={pagina} totalPaginas={totalPaginas} onCambiar={onCambiarPagina} />
     </div>
   )
 }
