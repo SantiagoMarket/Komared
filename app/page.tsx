@@ -21,25 +21,27 @@ async function fetchStats() {
     const [
       { count: totalAlertas },
       { data: municipiosData },
-      { count: aprobados },
+      { count: solucionados },
+      { count: verificados },
     ] = await Promise.all([
       supabase.from('reportes').select('*', { count: 'exact', head: true }),
       supabase.from('reportes').select('municipio'),
-      supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'aprobado'),
+      supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'solucionado'),
+      supabase.from('reportes').select('*', { count: 'exact', head: true }).neq('estado', 'pendiente'),
     ])
 
     const municipiosActivos = new Set((municipiosData ?? []).map((r: { municipio: string }) => r.municipio)).size
-    const tasaResolucion = totalAlertas
-      ? Math.round(((aprobados ?? 0) / totalAlertas) * 100)
-      : 0
+    const tasaResolucion = totalAlertas ? Math.round(((solucionados ?? 0) / totalAlertas) * 100) : 0
+    const tasaVerificacion = totalAlertas ? Math.round(((verificados ?? 0) / totalAlertas) * 100) : 0
 
     return {
       totalAlertas: totalAlertas ?? 0,
       municipiosActivos,
       tasaResolucion,
+      tasaVerificacion,
     }
   } catch {
-    return { totalAlertas: 0, municipiosActivos: 0, tasaResolucion: 0 }
+    return { totalAlertas: 0, municipiosActivos: 0, tasaResolucion: 0, tasaVerificacion: 0 }
   }
 }
 
@@ -50,7 +52,7 @@ export default async function Home() {
     <>
       <Navbar />
       <main>
-        <HeroSection />
+        <HeroSection stats={stats} />
         <PilaresSection />
         <ComoFuncionaSection />
         <MapaSection stats={stats} />

@@ -1,4 +1,11 @@
-export default function HeroSection() {
+interface HeroStats {
+  totalAlertas: number
+  municipiosActivos: number
+  tasaResolucion: number
+  tasaVerificacion: number
+}
+
+export default function HeroSection({ stats }: { stats: HeroStats }) {
   return (
     <section className="bg-[#F5F3EE] px-6 py-20 lg:py-28">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
@@ -60,7 +67,7 @@ export default function HeroSection() {
               ))}
             </div>
             <p className="text-sm text-gray-500">
-              <span className="font-bold text-[#1B1818]">+340 reportes comunitarios</span>{' '}
+              <span className="font-bold text-[#1B1818]">+{stats.totalAlertas} reportes comunitarios</span>{' '}
               en toda Colombia
             </p>
           </div>
@@ -114,10 +121,10 @@ export default function HeroSection() {
             {/* Stats del panel */}
             <div className="grid grid-cols-4 border-t border-gray-100">
               {[
-                { value: '342', label: 'Reportes' },
-                { value: '18', label: 'Municipios' },
-                { value: '94%', label: 'Verificados' },
-                { value: '87%', label: 'Resueltos' },
+                { value: String(stats.totalAlertas), label: 'Reportes' },
+                { value: String(stats.municipiosActivos), label: 'Municipios' },
+                { value: `${stats.tasaVerificacion}%`, label: 'Verificados' },
+                { value: `${stats.tasaResolucion}%`, label: 'Resueltos' },
               ].map((s) => (
                 <div key={s.label} className="py-4 text-center border-r border-gray-100 last:border-r-0">
                   <p className="text-lg font-bold text-[#1C3828]">{s.value}</p>
