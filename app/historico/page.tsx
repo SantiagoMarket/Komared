@@ -70,18 +70,13 @@ export default function Historico() {
               <p className="text-sm text-gray-500 mt-0.5">Datos agregados de todos los reportes ciudadanos</p>
             </div>
             <BotonDescargaPDF
-              totalGlobal={totalGlobal}
-              municipiosAfectados={municipiosAfectados}
-              totalPersonasGlobal={totalPersonasGlobal}
-              depMasCritico={depMasCritico}
-              ranking={ranking}
-              reportesFiltrados={reportesFiltrados}
               filtroFechaDesde={filtroFechaDesde}
               filtroFechaHasta={filtroFechaHasta}
               filtroDepartamento={filtroDepartamento}
               filtroMunicipio={filtroMunicipio}
               filtroEstado={filtroEstado}
               filtrosActivos={filtrosActivos}
+              tab={tab}
             />
           </div>
 

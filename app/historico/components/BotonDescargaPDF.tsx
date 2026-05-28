@@ -1,46 +1,48 @@
 'use client'
 
 import { useState } from 'react'
-import { pdf } from '@react-pdf/renderer'
-import { ResumenPDF } from './ResumenPDF'
-import type { FilaMunicipio, Reporte } from '@/types/reportes'
 
 type Props = {
-  totalGlobal: number
-  municipiosAfectados: number
-  totalPersonasGlobal: number
-  depMasCritico: string
-  ranking: FilaMunicipio[]
-  reportesFiltrados: Reporte[]
   filtroFechaDesde: string
   filtroFechaHasta: string
   filtroDepartamento: string
   filtroMunicipio: string
   filtroEstado: string
   filtrosActivos: number
+  tab: string
 }
 
-export function BotonDescargaPDF(props: Props) {
+export function BotonDescargaPDF({
+  filtroFechaDesde, filtroFechaHasta, filtroDepartamento,
+  filtroMunicipio, filtroEstado, filtrosActivos, tab,
+}: Props) {
   const [generando, setGenerando] = useState(false)
 
   async function descargar() {
     setGenerando(true)
     try {
-      const fechaGeneracion = new Date().toLocaleDateString('es-CO', {
-        day: '2-digit', month: 'long', year: 'numeric',
+      const params = new URLSearchParams({
+        fechaDesde:    filtroFechaDesde,
+        fechaHasta:    filtroFechaHasta,
+        departamento:  filtroDepartamento,
+        municipio:     filtroMunicipio,
+        estado:        filtroEstado,
+        filtrosActivos: String(filtrosActivos),
+        tab,
       })
-      const nombreArchivo = `komared-reporte-${new Date().toISOString().split('T')[0]}.pdf`
 
-      const blob = await pdf(
-        <ResumenPDF {...props} fechaGeneracion={fechaGeneracion} />
-      ).toBlob()
+      const res = await fetch(`/api/historico/pdf?${params}`)
+      if (!res.ok) throw new Error('Error generando PDF')
 
-      const url = URL.createObjectURL(blob)
-      const a   = document.createElement('a')
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
       a.href     = url
-      a.download = nombreArchivo
+      a.download = `komared-reporte-${new Date().toISOString().split('T')[0]}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+    } catch {
+      alert('No se pudo generar el PDF. Intenta de nuevo.')
     } finally {
       setGenerando(false)
     }
