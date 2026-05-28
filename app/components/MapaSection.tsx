@@ -17,8 +17,6 @@ export default function MapaSection({ stats }: { stats: Stats }) {
   const statsItems = [
     { value: stats.totalAlertas.toString(), label: 'Alertas totales' },
     { value: stats.municipiosActivos.toString(), label: 'Municipios activos' },
-    { value: `${stats.tasaResolucion}%`, label: 'Tasa de resolución' },
-    { value: '< 4h', label: 'Tiempo de respuesta' },
   ]
 
   return (
