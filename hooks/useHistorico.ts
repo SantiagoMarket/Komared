@@ -9,10 +9,11 @@ export function useHistorico() {
 
   useEffect(() => {
     async function cargar() {
-      const res = await fetch('/api/reportes')
+      const res = await fetch('/api/reportes?all=true')
       if (res.status === 401) { window.location.href = '/login?next=/historico'; return }
       if (!res.ok) return
-      setReportes(await res.json())
+      const { data } = await res.json()
+      setReportes(data)
       setCargando(false)
     }
     cargar()
