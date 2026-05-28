@@ -16,8 +16,10 @@ interface Stats {
 
 export default function MapaSection({ stats }: { stats: Stats }) {
   const statsItems = [
-    { value: stats.totalAlertas.toString(), label: 'Alertas totales' },
-    { value: stats.municipiosActivos.toString(), label: 'Municipios activos' },
+    { value: stats.totalAlertas.toLocaleString('es-CO'), label: 'Alertas totales' },
+    { value: stats.municipiosActivos.toLocaleString('es-CO'), label: 'Municipios activos' },
+    { value: stats.personasAfectadas.toLocaleString('es-CO'), label: 'Personas afectadas' },
+    { value: stats.reportesCriticos.toLocaleString('es-CO'), label: 'Reportes críticos' },
   ]
 
   return (
