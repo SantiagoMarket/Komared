@@ -1,9 +1,11 @@
+import KomaBotChat from '@/app/components/KomaBotChat'
+
 const pasos = [
   {
     numero: '01',
-    titulo: 'El Reporte Local — WhatsApp / SMS',
+    titulo: 'El Reporte Local — WhatsApp / Web',
     descripcion:
-      'El ciudadano toma una foto o envía un mensaje de WhatsApp. Solo necesita WhatsApp o un mensaje de texto.',
+      'El ciudadano toma una foto o envía un mensaje de WhatsApp o desde esta página. Solo necesita WhatsApp o acceso a internet.',
     tag: '📱 Sin APP · SIN INTERNET RÁPIDO',
   },
   {
@@ -19,20 +21,6 @@ const pasos = [
     descripcion:
       'El caso se georreferencia al mapa de calor dinámico, alertando simultáneamente al Banco de Alimentos más cercano (ABACO), a la prensa de investigación (CLIP) y a los entes de control estatales.',
     tag: '📡 ALERTA SIMULTÁNEA A TODOS LOS ACTORES',
-  },
-]
-
-const chatMensajes = [
-  { tipo: 'recibido', texto: 'Hola 👋 Soy KomaBot. ¿Quieres reportar un problema con el programa de alimentación?' },
-  { tipo: 'enviado', texto: 'Si. Hoy no llegó el almuerzo del PAE 🥺' },
-  { tipo: 'recibido', texto: '¿En qué institución? Puedes escribir el nombre o el municipio.' },
-  { tipo: 'enviado', texto: 'Escuela Rural La Esperanza, Cajamarca, Tolima' },
-  { tipo: 'separador', texto: '2 días seguidos' },
-  { tipo: 'recibido', texto: '¿Cuántos días seguidos ha fallado?' },
-  { tipo: 'enviado', texto: '3 días seguidos 😔' },
-  {
-    tipo: 'sistema',
-    texto: '✅ Reporte registrado de forma anónima. Tu identidad está protegida. ABACO y los entes de control han sido alertados. Gracias por cuidar a tu comunidad. 🙌',
   },
 ]
 
@@ -75,57 +63,8 @@ export default function ComoFuncionaSection() {
             ))}
           </div>
 
-          {/* Chat mockup */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-
-            {/* Header */}
-            <div className="bg-[#1C3828] px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#F4B534] flex items-center justify-center shrink-0">
-                <img src="/logo-komared.svg" alt="" className="h-4 w-auto brightness-0" />
-              </div>
-              <div>
-                <p className="text-white text-sm font-bold">KomaBot</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <p className="text-green-400 text-[10px]">Canal seguro y anónimo</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Mensajes */}
-            <div className="px-4 py-5 flex flex-col gap-3 bg-[#f0f0f0]">
-              {chatMensajes.map((msg, i) => {
-                if (msg.tipo === 'separador') {
-                  return (
-                    <div key={i} className="flex items-center gap-2 my-1">
-                      <div className="flex-1 h-px bg-gray-300" />
-                      <span className="text-[10px] text-gray-400">{msg.texto}</span>
-                      <div className="flex-1 h-px bg-gray-300" />
-                    </div>
-                  )
-                }
-                if (msg.tipo === 'sistema') {
-                  return (
-                    <div key={i} className="bg-[#1C3828] text-white text-xs rounded-xl px-4 py-3 leading-relaxed mx-2">
-                      {msg.texto}
-                    </div>
-                  )
-                }
-                return (
-                  <div
-                    key={i}
-                    className={`max-w-[80%] px-3.5 py-2.5 rounded-xl text-xs leading-relaxed shadow-sm ${
-                      msg.tipo === 'enviado'
-                        ? 'bg-[#DCF8C6] text-gray-800 self-end rounded-br-none'
-                        : 'bg-white text-gray-800 self-start rounded-bl-none'
-                    }`}
-                  >
-                    {msg.texto}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+          {/* Chat funcional con KomaBot */}
+          <KomaBotChat />
         </div>
       </div>
     </section>

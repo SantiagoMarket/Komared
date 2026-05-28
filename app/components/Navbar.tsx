@@ -30,7 +30,9 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-3">
           <a
-            href="#unete"
+            href="https://wa.me/573134689377"
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-5 py-2.5 bg-[#F4B534] text-[#1B1818] font-semibold text-sm rounded-full hover:bg-[#e5a820] transition-colors"
           >
             Participa →
@@ -56,7 +58,13 @@ export default function Navbar() {
           <a href="#proposito" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Propósito</a>
           <a href="#como-funciona" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Cómo Funciona</a>
           <a href="#mapa" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Mapa Vivo</a>
-          <a href="#unete" onClick={() => setOpen(false)} className="px-5 py-2.5 bg-[#F4B534] text-[#1B1818] font-semibold text-sm rounded-full text-center">
+          <a
+            href="https://wa.me/573134689377"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="px-5 py-2.5 bg-[#F4B534] text-[#1B1818] font-semibold text-sm rounded-full text-center"
+          >
             Participa →
           </a>
         </div>

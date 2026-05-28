@@ -1,3 +1,10 @@
+import dynamic from 'next/dynamic'
+
+const MapaPreview = dynamic(() => import('@/components/MapaPreview'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-[#0f2318]" />,
+})
+
 interface Stats {
   totalAlertas: number
   municipiosActivos: number
@@ -53,12 +60,12 @@ export default function MapaSection({ stats }: { stats: Stats }) {
             </div>
           </div>
 
-          {/* Área del mapa — Colombia silhouette */}
-          <div className="bg-[#0f2318] h-72 lg:h-96 relative flex items-center justify-center">
-            <ColombiaMap />
+          {/* Área del mapa — mapa de calor real */}
+          <div className="bg-[#0f2318] h-72 lg:h-96 relative">
+            <MapaPreview />
             <a
               href="/mapa"
-              className="absolute bottom-5 right-5 px-5 py-2.5 bg-[#F4B534] text-[#1B1818] font-bold text-sm rounded-full hover:bg-[#e5a820] transition-colors flex items-center gap-2 shadow-lg"
+              className="absolute bottom-5 right-5 z-[1000] px-5 py-2.5 bg-[#F4B534] text-[#1B1818] font-bold text-sm rounded-full hover:bg-[#e5a820] transition-colors flex items-center gap-2 shadow-lg"
             >
               Ver mapa completo
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,57 +86,5 @@ export default function MapaSection({ stats }: { stats: Stats }) {
         </div>
       </div>
     </section>
-  )
-}
-
-function ColombiaMap() {
-  const puntos = [
-    { top: '22%', left: '45%', size: 8, color: '#F4B534' },
-    { top: '35%', left: '28%', size: 6, color: '#F4B534' },
-    { top: '40%', left: '52%', size: 10, color: '#ef4444' },
-    { top: '50%', left: '35%', size: 7, color: '#F4B534' },
-    { top: '55%', left: '48%', size: 5, color: '#F4B534' },
-    { top: '62%', left: '40%', size: 6, color: '#ef4444' },
-    { top: '30%', left: '60%', size: 5, color: '#F4B534' },
-    { top: '45%', left: '62%', size: 8, color: '#F4B534' },
-    { top: '28%', left: '38%', size: 6, color: '#ef4444' },
-    { top: '58%', left: '32%', size: 5, color: '#F4B534' },
-  ]
-
-  return (
-    <div className="relative w-48 h-64 lg:w-56 lg:h-80 opacity-80">
-      {/* Colombia outline simplificada */}
-      <svg viewBox="0 0 200 280" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full">
-        <path
-          d="M90 10 C110 8 135 15 148 30 C160 42 162 55 158 68 C168 72 175 80 172 92
-             C178 98 180 108 175 118 C180 125 178 138 170 145 C172 155 168 165 160 170
-             C155 180 145 188 135 192 C128 200 118 208 108 212 C100 218 90 222 80 225
-             C70 228 60 226 52 220 C44 214 40 204 42 195 C36 188 33 178 38 170
-             C32 162 32 150 38 143 C33 133 35 120 42 113 C37 103 40 90 48 83
-             C42 73 43 60 52 50 C58 38 68 25 80 16 Z"
-          fill="#1C3828"
-          stroke="#2d5c3a"
-          strokeWidth="2"
-        />
-      </svg>
-
-      {/* Puntos de alertas */}
-      {puntos.map((p, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full animate-pulse"
-          style={{
-            top: p.top,
-            left: p.left,
-            width: p.size,
-            height: p.size,
-            background: p.color,
-            boxShadow: `0 0 ${p.size * 2}px ${p.color}80`,
-            transform: 'translate(-50%, -50%)',
-            animationDelay: `${i * 0.3}s`,
-          }}
-        />
-      ))}
-    </div>
   )
 }

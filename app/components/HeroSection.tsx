@@ -31,7 +31,9 @@ export default function HeroSection() {
 
           <div className="flex flex-wrap gap-3">
             <a
-              href="#unete"
+              href="https://wa.me/573134689377"
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-6 py-3.5 bg-[#F4B534] text-[#1B1818] font-bold text-sm rounded-full hover:bg-[#e5a820] transition-colors flex items-center gap-2"
             >
               Participa ahora
