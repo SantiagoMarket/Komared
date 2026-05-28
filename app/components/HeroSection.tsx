@@ -1,7 +1,6 @@
 interface HeroStats {
   totalAlertas: number
   municipiosActivos: number
-  reportesCriticos: number
   personasAfectadas: number
 }
 
@@ -119,12 +118,11 @@ export default function HeroSection({ stats }: { stats: HeroStats }) {
             </div>
 
             {/* Stats del panel */}
-            <div className="grid grid-cols-4 border-t border-gray-100">
+            <div className="grid grid-cols-3 border-t border-gray-100">
               {[
                 { value: stats.totalAlertas.toLocaleString('es-CO'), label: 'Reportes' },
                 { value: String(stats.municipiosActivos), label: 'Municipios' },
                 { value: stats.personasAfectadas.toLocaleString('es-CO'), label: 'Afectados' },
-                { value: String(stats.reportesCriticos), label: 'Críticos' },
               ].map((s) => (
                 <div key={s.label} className="py-4 text-center border-r border-gray-100 last:border-r-0">
                   <p className="text-lg font-bold text-[#1C3828]">{s.value}</p>

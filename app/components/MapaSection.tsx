@@ -10,7 +10,6 @@ const MapaPreview = dynamic(() => import('@/components/MapaPreview'), {
 interface Stats {
   totalAlertas: number
   municipiosActivos: number
-  reportesCriticos: number
   personasAfectadas: number
 }
 
@@ -19,7 +18,6 @@ export default function MapaSection({ stats }: { stats: Stats }) {
     { value: stats.totalAlertas.toLocaleString('es-CO'), label: 'Alertas totales' },
     { value: stats.municipiosActivos.toLocaleString('es-CO'), label: 'Municipios activos' },
     { value: stats.personasAfectadas.toLocaleString('es-CO'), label: 'Personas afectadas' },
-    { value: stats.reportesCriticos.toLocaleString('es-CO'), label: 'Reportes críticos' },
   ]
 
   return (
@@ -79,7 +77,7 @@ export default function MapaSection({ stats }: { stats: Stats }) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           {statsItems.map((s) => (
             <div key={s.label} className="text-center">
               <p className="text-4xl lg:text-5xl font-bold text-[#F4B534] mb-2">{s.value}</p>

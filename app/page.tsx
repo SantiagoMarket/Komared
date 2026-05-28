@@ -21,12 +21,10 @@ async function fetchStats() {
     const [
       { count: totalAlertas },
       { data: municipiosData },
-      { count: reportesCriticos },
       { data: personasData },
     ] = await Promise.all([
       supabase.from('reportes').select('*', { count: 'exact', head: true }),
       supabase.from('reportes').select('municipio'),
-      supabase.from('reportes').select('*', { count: 'exact', head: true }).eq('estado', 'critico'),
       supabase.from('reportes').select('personas_afectadas'),
     ])
 
@@ -39,11 +37,10 @@ async function fetchStats() {
     return {
       totalAlertas: totalAlertas ?? 0,
       municipiosActivos,
-      reportesCriticos: reportesCriticos ?? 0,
       personasAfectadas,
     }
   } catch {
-    return { totalAlertas: 0, municipiosActivos: 0, reportesCriticos: 0, personasAfectadas: 0 }
+    return { totalAlertas: 0, municipiosActivos: 0, personasAfectadas: 0 }
   }
 }
 
