@@ -117,8 +117,8 @@ export default function KomaBotChat() {
               key={i}
               className={`max-w-[82%] px-3.5 py-2.5 rounded-xl text-xs leading-relaxed shadow-sm ${
                 msg.role === 'user'
-                  ? 'bg-[#DCF8C6] text-gray-800 self-end rounded-br-none'
-                  : 'bg-white text-gray-800 self-start rounded-bl-none'
+                  ? 'bg-[#DCF8C6] text-black self-end rounded-br-none'
+                  : 'bg-white text-black self-start rounded-bl-none'
               }`}
             >
               {msg.text}
@@ -156,7 +156,7 @@ export default function KomaBotChat() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Escribe tu mensaje..."
               disabled={cargando}
-              className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#587546] disabled:opacity-50 bg-white"
+              className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#587546] disabled:opacity-50 bg-white text-black"
             />
             <button
               type="submit"
