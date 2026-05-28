@@ -19,11 +19,12 @@ export default function KomaBotChat() {
   const [input, setInput] = useState('')
   const [cargando, setCargando] = useState(false)
   const [terminado, setTerminado] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const chatRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = chatRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [mensajes, cargando])
 
   async function enviar() {
@@ -100,7 +101,7 @@ export default function KomaBotChat() {
       </div>
 
       {/* Mensajes */}
-      <div className="px-4 py-5 flex flex-col gap-3 bg-[#f0f0f0] h-80 overflow-y-auto">
+      <div ref={chatRef} className="px-4 py-5 flex flex-col gap-3 bg-[#f0f0f0] h-80 overflow-y-auto">
         {mensajes.map((msg, i) => {
           if (msg.sistema) {
             return (
@@ -132,7 +133,6 @@ export default function KomaBotChat() {
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
