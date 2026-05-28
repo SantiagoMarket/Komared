@@ -78,8 +78,6 @@ export default function MapaPreview() {
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tap: false as any,
     }).setView(COLOMBIA_CENTER, ZOOM_INICIAL)
     mapRef.current = mapa
 
