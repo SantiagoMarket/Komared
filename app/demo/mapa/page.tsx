@@ -13,12 +13,9 @@ export default function MapaDemo() {
         <h1 className="text-white font-semibold text-sm tracking-wide uppercase">
           KomaRed · Demo — Reportes en vivo
         </h1>
-        <nav className="ml-auto flex items-center gap-4">
-          <Link href="/demo/historico" className="text-gray-400 hover:text-white text-xs transition-colors">
+        <nav className="ml-auto flex items-center gap-3">
+          <Link href="/demo/historico" className="px-4 py-1.5 bg-[#1C3828] text-white text-xs font-semibold rounded-full hover:bg-[#2a5040] transition-colors">
             Histórico
-          </Link>
-          <Link href="/demo" className="text-gray-400 hover:text-white text-xs transition-colors">
-            Registro
           </Link>
         </nav>
       </header>
