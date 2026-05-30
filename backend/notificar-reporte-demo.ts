@@ -83,7 +83,7 @@ export async function notificarReporteDemo(reporte: DatosReporte): Promise<void>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="text-align: center;">
-                    <a href="https://komared.com/demo/mapa" style="display: inline-block; background: #1C3828; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: bold;">Ver en el mapa →</a>
+                    <a href="https://komared.com/demo/historico" style="display: inline-block; background: #1C3828; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: bold;">Ver reporte →</a>
                   </td>
                 </tr>
               </table>
