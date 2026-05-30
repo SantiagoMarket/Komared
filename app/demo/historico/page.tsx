@@ -56,7 +56,7 @@ export default function HistoricoDemo() {
           <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-white font-semibold text-sm tracking-wide">KomaRed · Demo</span>
           <nav className="ml-auto flex items-center gap-4">
-            <Link href="/demo/mapa" className="text-green-200/70 hover:text-white text-sm transition-colors">
+            <Link href="/demo/mapa" className="px-4 py-1.5 bg-[#2a5040] text-white text-xs font-semibold rounded-full hover:bg-[#3a6050] transition-colors">
               Mapa en vivo
             </Link>
           </nav>
