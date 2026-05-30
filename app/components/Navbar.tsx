@@ -30,6 +30,12 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-3">
           <a
+            href="/historico"
+            className="px-5 py-2.5 border border-[#1C3828] text-[#1C3828] font-semibold text-sm rounded-full hover:bg-[#1C3828] hover:text-white transition-colors"
+          >
+            Dashboard
+          </a>
+          <a
             href="https://wa.me/573134689377"
             target="_blank"
             rel="noopener noreferrer"
@@ -58,6 +64,13 @@ export default function Navbar() {
           <a href="#proposito" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Propósito</a>
           <a href="#como-funciona" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Cómo Funciona</a>
           <a href="#mapa" onClick={() => setOpen(false)} className="text-sm text-gray-600 font-medium">Mapa Vivo</a>
+          <a
+            href="/historico"
+            onClick={() => setOpen(false)}
+            className="px-5 py-2.5 border border-[#1C3828] text-[#1C3828] font-semibold text-sm rounded-full text-center"
+          >
+            Dashboard
+          </a>
           <a
             href="https://wa.me/573134689377"
             target="_blank"
