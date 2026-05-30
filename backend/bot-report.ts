@@ -31,7 +31,8 @@ export async function crearReporte(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
 
-  const { data: reporteData, error } = await getSupabaseBot().from('reportes').insert({
+  const tablaReportes = (process.env.BOT_TABLA_REPORTES ?? 'reportes') as 'reportes' | 'reportes_prueba'
+  const { data: reporteData, error } = await getSupabaseBot().from(tablaReportes).insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
     tipo: campos.tipo,
