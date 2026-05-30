@@ -26,7 +26,7 @@ export async function proxy(req: NextRequest) {
 
   // Usuario no autenticado intentando acceder a ruta protegida
   if (!user) {
-    if (pathname.startsWith('/dashboard') || pathname === '/historico') {
+    if (pathname.startsWith('/dashboard')) {
       const url = req.nextUrl.clone()
       url.pathname = '/login'
       url.searchParams.set('next', pathname)
@@ -55,5 +55,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/historico', '/login'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/login'],
 }

@@ -22,7 +22,8 @@ export default function NavbarApp() {
   useEffect(() => {
     setPathname(window.location.pathname)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setEsAdmin(session?.user?.app_metadata?.role !== 'cliente')
+      if (!session) { setEsAdmin(null); return }
+      setEsAdmin(session.user.app_metadata?.role !== 'cliente')
     })
   }, [])
 
@@ -32,7 +33,7 @@ export default function NavbarApp() {
 
         {/* Logo */}
         <a
-          href={esAdmin === false ? '/historico' : '/dashboard'}
+          href={esAdmin === null ? '/historico' : esAdmin === false ? '/historico' : '/dashboard'}
           className="flex items-center gap-2.5 shrink-0"
         >
           <img src="/logo_komared.png" alt="KomaRed" className="h-7 w-auto" />
@@ -63,8 +64,8 @@ export default function NavbarApp() {
           </nav>
         )}
 
-        {/* User menu */}
-        <div className="relative shrink-0">
+        {/* User menu — solo visible cuando hay sesión */}
+        {esAdmin !== null && <div className="relative shrink-0">
           <button
             onClick={() => setMenuAbierto(!menuAbierto)}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-gray-100 transition-colors"
@@ -95,7 +96,7 @@ export default function NavbarApp() {
               </div>
             </>
           )}
-        </div>
+        </div>}
 
       </div>
     </header>
