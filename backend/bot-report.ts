@@ -1,5 +1,6 @@
 import { getSupabaseBot } from '@/backend/supabase-bot'
 import { notificarNuevoReporte } from '@/backend/notificar-nuevo-reporte'
+import { notificarReporteDemo } from '@/backend/notificar-reporte-demo'
 import { notificarError } from '@/backend/notificar-error'
 import { TIPOS_CRITICOS } from '@/lib/reportes-config'
 
@@ -51,7 +52,7 @@ export async function crearReporte(
 
   if (error) throw new Error(`Error al guardar reporte: ${error.message}`)
 
-  notificarNuevoReporte({
+  const datosNotificacion = {
     tipo: campos.tipo,
     nombre_lugar: campos.nombre_lugar,
     municipio: geo?.municipio ?? campos.municipio_id ?? null,
@@ -59,7 +60,13 @@ export async function crearReporte(
     personas_afectadas: campos.personas_afectadas ? Number(campos.personas_afectadas) : null,
     tiempo_situacion_dias: campos.tiempo_situacion_dias ? Number(campos.tiempo_situacion_dias) : null,
     canal,
-  }).catch((err) => notificarError('crearReporte/notificarNuevoReporte', err))
+  }
+
+  if (tablaReportes === 'reportes_prueba') {
+    notificarReporteDemo(datosNotificacion).catch((err) => notificarError('crearReporte/notificarReporteDemo', err))
+  } else {
+    notificarNuevoReporte(datosNotificacion).catch((err) => notificarError('crearReporte/notificarNuevoReporte', err))
+  }
 
   return reporteData.id as string
 }
