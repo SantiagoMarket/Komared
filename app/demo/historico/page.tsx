@@ -59,9 +59,6 @@ export default function HistoricoDemo() {
             <Link href="/demo/mapa" className="text-green-200/70 hover:text-white text-sm transition-colors">
               Mapa en vivo
             </Link>
-            <Link href="/demo" className="text-green-200/70 hover:text-white text-sm transition-colors">
-              Registro
-            </Link>
           </nav>
         </div>
       </header>
