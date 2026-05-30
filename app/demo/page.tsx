@@ -110,12 +110,6 @@ export default function DemoRegistro() {
               {cargando ? 'Registrando...' : 'Ingresar al demo'}
             </button>
 
-            <p className="text-center text-xs text-gray-400">
-              O explora directamente:{' '}
-              <Link href="/demo/mapa" className="underline hover:text-gray-600">Mapa</Link>
-              {' · '}
-              <Link href="/demo/historico" className="underline hover:text-gray-600">Histórico</Link>
-            </p>
           </form>
         )}
       </div>
