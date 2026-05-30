@@ -46,9 +46,9 @@ export function KpiGrid({ totalGlobal, municipiosAfectados, totalPersonasGlobal,
         <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
           <IconAlert />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Departamento más crítico</p>
-          <p className="text-xl font-bold text-red-500 leading-tight">{depMasCritico}</p>
+          <p className="text-base md:text-xl font-bold text-red-500 leading-tight break-words">{depMasCritico}</p>
         </div>
       </div>
     </div>
