@@ -1,6 +1,5 @@
 import { getSupabaseBot } from '@/backend/supabase-bot'
 import { notificarNuevoReporte } from '@/backend/notificar-nuevo-reporte'
-import { notificarReporteDemo } from '@/backend/notificar-reporte-demo'
 import { notificarError } from '@/backend/notificar-error'
 import { TIPOS_CRITICOS } from '@/lib/reportes-config'
 
@@ -32,8 +31,7 @@ export async function crearReporte(
     (m) => m.municipio.toLowerCase() === (campos.municipio_id ?? '').toLowerCase()
   ) ?? null
 
-  const tablaReportes = (process.env.BOT_TABLA_REPORTES ?? 'reportes') as 'reportes' | 'reportes_prueba'
-  const { data: reporteData, error } = await getSupabaseBot().from(tablaReportes).insert({
+  const { data: reporteData, error } = await getSupabaseBot().from('reportes').insert({
     telefono_reporte: telefonoId,
     nombre_reportante: nombreReportante ?? null,
     tipo: campos.tipo,
@@ -62,11 +60,7 @@ export async function crearReporte(
     canal,
   }
 
-  if (tablaReportes === 'reportes_prueba') {
-    notificarReporteDemo(datosNotificacion).catch((err) => notificarError('crearReporte/notificarReporteDemo', err))
-  } else {
-    notificarNuevoReporte(datosNotificacion).catch((err) => notificarError('crearReporte/notificarNuevoReporte', err))
-  }
+  notificarNuevoReporte(datosNotificacion).catch((err) => notificarError('crearReporte/notificarNuevoReporte', err))
 
   return reporteData.id as string
 }

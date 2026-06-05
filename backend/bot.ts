@@ -166,12 +166,8 @@ export async function procesarMensaje({
       const reporteId = await crearReporte(telefonoId, campos, municipios, canal, nombreReportante, mediaGuardada ?? undefined)
       await vincularMedia(telefonoId, reporteId)
       await marcarCompletado(telefonoId, reporteId)
-      const esDemo = process.env.BOT_TABLA_REPORTES === 'reportes_prueba'
-      const urlMapa = esDemo
-        ? 'https://komared.com/demo/mapa'
-        : 'https://komared.com/mapa'
       await sendReply(
-        `✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 ${urlMapa}`
+        `✅ ¡Reporte registrado!\n\nGracias por tu veeduría. Tu reporte ya aparece en el mapa público:\n🗺 https://komared.com/mapa`
       )
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
